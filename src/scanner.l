@@ -19,9 +19,10 @@ L[a-zA-Z_]
 "void"		{ count(); return(VOID); }
 "while"		{ count(); return(WHILE); }
 "for"		{ count(); return(FOR); }
+"do"            { count(); return(DO); }
 [$]?{L}({L}|{D})*	{ count(); yylval.string=strdup(yytext); return(IDENTIFIER); }
-{D}+    	{ count(); yylval.string=strdup(yytext); return(CONSTANTI); }
-{D}+"."{D}*     { count(); yylval.string=strdup(yytext); return(CONSTANTF); }
+{D}+    	{ count(); yylval.entier=atoi(strdup(yytext)); return(CONSTANTI); }
+{D}+"."{D}*     { count(); yylval.flottant=atof(strdup(yytext)); return(CONSTANTF); }
 "+="		{ count(); return(ADD_ASSIGN); }
 "-="		{ count(); return(SUB_ASSIGN); }
 "*="		{ count(); return(MUL_ASSIGN); }

@@ -1,5 +1,4 @@
 ; ModuleID = 'ex.o'
-source_filename = "ex.c"
 target datalayout = "e-p:32:32-i64:64-v128:32:128-n32-S128"
 target triple = "asmjs-unknown-emscripten"
 
