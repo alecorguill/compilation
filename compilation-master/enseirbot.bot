@@ -1,0 +1,65 @@
+/* Ceci est un input possible pour obtenir le fichier .ll*/
+
+int g;
+void drive(){
+
+     //CAS BASIQUES
+     //float a,b,c;
+     //int x,y;     
+     //a=1.0;
+     //a=b;
+     //x=1;
+     //x=y;
+     //a=1.0;
+     //a=1.0+2.0;
+     //a=b+1.0;
+     //a=b+1.0+c+2.0/1.0;
+     //x=2*3*4;   
+     //a+=1.0;
+     //x+=1;
+     //$accel = 0.5*2.0-0.25;
+     //a=1.0;
+     //$accel = a+1.0;
+     //$accel = 2.0+a;
+     //$accel = $accel+0.25;
+     //$accel += 0.25;
+     //$gear = 2;
+
+
+     //APPELS DE FONCTIONS
+     float angle,nangle,cangle;	
+     angle = pos_to_middle() - car_angle() + pos_to_middle();
+     nangle = norm_pi_pi(angle);
+     cangle = nangle - angle;
+
+
+     //BRANCHEMENTS
+     //float c,d,e,f,h,i;
+     //int r;
+
+     //PORTEE DES VARIABLES
+     //c=1.0;
+     //if(d==e){int x; while(e!=i){int test; test=42; x=1;}; r=1;}
+     //f=10.0;
+     //i=2.0;
+
+     //VARIABLES INUTILISABLES ICI -> Erreur
+     //x=1;
+     //test=2;
+
+     //IF
+     //h=1.0;
+     //i=2.0;
+     //if(e==f){d=1.0;};
+     //i=3.5;
+
+     //IF ELSE
+     //e=1.0;
+     //if(f!=h){if(e>f){d=1.0;};e=1.0;}else{i=h;};
+     //d=1.0;
+     
+     //FOR
+     //d=1.0;
+     //for (i=0.0; i==f; i+=1.0){i+=1.0;};
+     //e=4.0;
+}	     

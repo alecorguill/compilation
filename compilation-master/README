@@ -1,0 +1,47 @@
+Projet compilation
+------------------ 
+
+Auteurs : Grégoire Pichon, Pierre Lefebvre
+
+
+IMPORTANT
+---------
+Ne pas supprimer le fichier obj/driver.o
+
+
+Compilation
+-----------
+Le Makefile permet de compiler le compilateur (fichiers lex et yacc), le robot (enseirbot.bot > drive.ll > enseirBOT.so) ou les deux.
+
+
+Les cibles du makefile
+----------------------
+all        : compile le compilateur (fichier lex et yacc) et le robot (enseirbot.bot)
+compiler   : compile uniquement le code du compilateur
+robot      : genere le binaire du robot (enseirBOT.so)
+robot-llvm : genere uniquement le code llvm du robot (drive.ll)
+clean      : supprime les fichiers générés ou compilés (y compris dans src/)
+
+
+Les fichiers générés
+--------------------
+src/parse    : le compilateur
+drive.ll     : le code llvm du robot
+enseirBOT.so : le binaire du robot
+
+
+Fonctionnalités
+--------------------
+Les fonctionnalités suivantes sont supportées:
+- Gestion des variables de base
+- Gestion des variables spéciales (avec $)
+- Appels de fonctions
+- Opérations typées
+- Comparaisons
+- Ensemble des branchements (if, if else, for, while)
+- Gestion de la portée d'une variable (globale, locale à un block..)
+
+Les fonctionnalités suivantes ne sont pas supportées:
+- Déclaration d'une autre fonction que drive
+- Gestion des tableaux
+- Gestion des ++ et des --
