@@ -6,9 +6,7 @@
 
 %}
 
-%token <string> IDENTIFIER 
-%token <flottant> CONSTANTF
-%token <entier> CONSTANTI
+%token <string> IDENTIFIER CONSTANTF CONSTANTI
 %token INC_OP DEC_OP LE_OP GE_OP EQ_OP NE_OP
 %token SUB_ASSIGN MUL_ASSIGN ADD_ASSIGN DIV_ASSIGN
 %token SHL_ASSIGN SHR_ASSIGN
@@ -16,8 +14,8 @@
 %token REM SHL SHR
 %token AND OR
 %token TYPE_NAME
-%token INT FLOAT VOID
-%token IF ELSE WHILE RETURN FOR DO
+%token INT FLOAT VOID DOUBLE
+ %token IF ELSE WHILE RETURN FOR DO
 %start program
 %union {
   char *string;
@@ -48,9 +46,9 @@ shift_expression
 ;
 
 primary_expression
-: IDENTIFIER { printf("%s", $1); }
-| CONSTANTI { printf("%d", $1); }
-| CONSTANTF { printf("%f", $1); }
+: IDENTIFIER
+| CONSTANTI
+| CONSTANTF
 | '(' expression ')'
 | IDENTIFIER '(' ')'
 | IDENTIFIER '(' argument_expression_list ')'
@@ -130,6 +128,7 @@ type_name
 : VOID
 | INT
 | FLOAT
+| DOUBLE
 ;
 
 declarator
@@ -145,7 +144,7 @@ parameter_list
 ;
 
 parameter_declaration
-: type_name declarator
+: type_name declarator 
 ;
 
 statement

@@ -1,5 +1,5 @@
 +LEX=lex
-YACC=yacc
+YACC=bison
 CFLAGS=-Wall -g
 CC=gcc
 

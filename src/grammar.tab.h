@@ -71,12 +71,13 @@ extern int yydebug;
      INT = 280,
      FLOAT = 281,
      VOID = 282,
-     IF = 283,
-     ELSE = 284,
-     WHILE = 285,
-     RETURN = 286,
-     FOR = 287,
-     DO = 288
+     DOUBLE = 283,
+     IF = 284,
+     ELSE = 285,
+     WHILE = 286,
+     RETURN = 287,
+     FOR = 288,
+     DO = 289
    };
 #endif
 
@@ -85,7 +86,7 @@ extern int yydebug;
 typedef union YYSTYPE
 {
 /* Line 2058 of yacc.c  */
-#line 22 "grammar.y"
+#line 20 "grammar.y"
 
   char *string;
   int entier;
@@ -93,7 +94,7 @@ typedef union YYSTYPE
 
 
 /* Line 2058 of yacc.c  */
-#line 97 "grammar.tab.h"
+#line 98 "grammar.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

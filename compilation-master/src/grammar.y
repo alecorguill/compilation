@@ -40,9 +40,9 @@
   }
 
   char* fonctions[21]={
-    "createCanvas",             "@get_track_angle(%struct.tTrkLocPos* %pos)"         , "no",
+    "createCanvas",             "declare void @createCanvas(i32,i32)"         , "no",
     "background",           "@get_pos_to_right(%struct.tTrkLocPos* %pos)"        , "no",
-    "pos_to_middle",          "@get_pos_to_middle(%struct.tTrkLocPos* %pos)"       , "no",
+    "square",          "@get_pos_to_middle(%struct.tTrkLocPos* %pos)"       , "no",
     "pos_to_left",            "@get_pos_to_left(%struct.tTrkLocPos* %pos)"         , "no",
     "pos_to_start",           "@get_pos_to_start(%struct.tTrkLocPos* %pos)"        , "no",
     "track_seg_length",       "@get_track_seg_length(%struct.trackSeg* %seg)"      , "no",
@@ -65,12 +65,12 @@
     for (i=0; i<14; i++){
       if (strcmp(s, fonctions[3*i])==0){
 	if (strcmp(fonctions[3*i+2], "no")==0){
-	  printf("\t%%%s = alloca double\n", s);
+	  printf("%%%s = alloca double\n", s);
 	  fonctions[3*i+2] = "ok";
 	}
 	sprintf(dest, "%s", str1);
-  	sprintf(buf, "\t%%tmp%d = call double %s\n", tmps, fonctions[3*i+1]);
-  	sprintf(buf+strlen(buf), "\tstore double %%tmp%d, double* %%%s\n", tmps, str1);
+  	sprintf(buf, "%%d = call double %s\n", tmps, fonctions[3*i+1]);
+  	sprintf(buf+strlen(buf), "store double %%d, double* @%s\n", tmps, str1);
   	tmps++;
   	return;
       }
@@ -86,12 +86,12 @@
     for (i=0; i<1; i++){
       if (strcmp(str1, fonctions_args[3*i])==0){
 	if (strcmp(fonctions_args[3*i+2], "no")==0){
-	  printf("\t%%%s = alloca double\n", s1);
+	  printf("%%%s = alloca double\n", s1);
 	  fonctions_args[3*i+2] = "ok";
 	}
 	sprintf(buf, "%s", str2);
-  	sprintf(buf+strlen(buf), "\t%%tmp%d = call double %s %%tmp%d)\n", tmps, fonctions_args[3*i+1], tmps-1);
-  	sprintf(buf+strlen(buf), "\tstore double %%tmp%d, double* %%%s\n", tmps, str1);
+  	sprintf(buf+strlen(buf), "%%var%d = call double %s %%var%d)\n", tmps, fonctions_args[3*i+1], tmps-1);
+  	sprintf(buf+strlen(buf), "store double %%var%d, double* @%s\n", tmps, str1);
   	tmps++;
   	return;
       }
@@ -120,7 +120,7 @@
       t2 = s2.type;
 
     if(t1!=t2)
-      //yyerror("Operations entre des entites de type different");
+      yyerror("Operations entre des entites de type different");
     
     sprintf(dst+strlen(dst), "%s", str2);
 
@@ -130,11 +130,11 @@
 	sprintf(type_operation, "sdiv");
       else
 	sprintf(type_operation, "%s", type_op);
-      sprintf(dst+strlen(dst), "\t%%tmp%d = %s i32 %%tmp%d, %%tmp%d\n", tmps, type_operation, tmps-2, tmps-1);
+      sprintf(dst+strlen(dst), "%%var%d = %s i32 %%var%d, %%var%d\n", tmps, type_operation, tmps-2, tmps-1);
     }
 
     else{			/* double */
-      sprintf(dst+strlen(dst), "\t%%tmp%d = f%s double %%tmp%d, %%tmp%d\n", tmps, type_op, tmps-2, tmps-1);
+      sprintf(dst+strlen(dst), "%%var%d = %s double %%var%d, %%var%d\n", tmps, type_op, tmps-2, tmps-1);
     }
 
     tmps+=1;
@@ -154,12 +154,12 @@
       else
 	//yyerror("Variable non definie");	
 
-      sprintf(dst, "\n%s", buf1);
+	sprintf(dst, "\n%s", buf1);
 
       if (var_is_special(v))
-	sprintf(dst+strlen(dst), "\t%%tmp%d = load %s* %s\n", tmps, types[t], var_get_llvm_name(v));
+	sprintf(dst+strlen(dst), "%%var%d = load %s* %s\n", tmps, types[t], var_get_llvm_name(v));
       else
-	sprintf(dst+strlen(dst), "\t%%tmp%d = load %s* %%%s\n", tmps, types[t], var_get_name(v));
+	sprintf(dst+strlen(dst), "%%var%d = load %s* @%s\n", tmps, types[t], var_get_name(v));
   
       tmps++;
       return t; 
@@ -169,9 +169,9 @@
       str1 = s1.s;
       sprintf(dst, "\n%s", buf1);
       if (s1.type==1)		/* int */
-	sprintf(dst+strlen(dst), "\t%%tmp%d = add i32 0, %s\n", tmps, str1);
+	sprintf(dst+strlen(dst), "%%var%d = add i32 0, %s\n", tmps, str1);
       else			/* double */
-	sprintf(dst+strlen(dst), "\t%%tmp%d = fadd double 0.0, %s\n", tmps, str1);
+	sprintf(dst+strlen(dst), "%%var%d = add double 0.0, %s\n", tmps, str1);
       tmps++;
       return s1.type;
     }
@@ -195,7 +195,7 @@
     }
     
     sprintf(dest, "%s %s", str1, str2);
-    sprintf(dest+strlen(dest), "\t%%result%d = %ccmp %s %s %%tmp%d, %%tmp%d\n\n", results, c, c2, types[s1.type], tmps-2, tmps-1);
+    sprintf(dest+strlen(dest), "%%result%d = %ccmp %s %s %%var%d, %%var%d\n\n", results, c, c2, types[s1.type], tmps-2, tmps-1);
     ;
     results++;
     return s1.type;
@@ -315,9 +315,9 @@ expression
   
   if (var_is_declared(v)){
     t1 = var_get_type(v);
-  }
+  }/*
   else
-    //yyerror("Affectation dans une variable non declaree");
+  yyerror("Affectation dans une variable non declaree");*/
     
   if (t1!=t2)
     //yyerror("Affectation dans une variable de type different");
@@ -333,29 +333,29 @@ expression
     }
 
     if(var_is_special(v)){
-      sprintf($$.s+strlen($$.s), "\t%%tmp%d = load %s* %s\n", tmps, types[t2], var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s),"%%var%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
     }
     else{
-      sprintf($$.s+strlen($$.s), "\t%%tmp%d = load %s* %%%s\n", tmps, types[t2], var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s),"%%var%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
     }
-    sprintf($$.s+strlen($$.s), "\t%%tmp%d = %c%s %s %%tmp%d, %%tmp%d\n", tmps+1, assign, type_assignement, a_type, tmps-1, tmps);
+    sprintf($$.s+strlen($$.s), "%%var%d = %c%s %s %%var%d, %%var%d\n", tmps+1, assign, type_assignement, a_type, tmps-1, tmps);
   }
 
   if (t1==1){ 			/* int */
     if (var_is_special(v)){
-      sprintf($$.s+strlen($$.s), "\tstore i32 %%tmp%d, i32* %s\n", tmps-1, var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s), "store i32 %%var%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
       var_set_modified(v, V_MODIFIED);
     }
     else
-      sprintf($$.s+strlen($$.s), "\tstore i32 %%tmp%d, i32* %%%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s), "store i32 %%var%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
   }
   else{				/* double */
     if (var_is_special(v)){
       var_set_modified(v, V_MODIFIED);
-      sprintf($$.s+strlen($$.s), "\tstore double %%tmp%d, double* %s\n", tmps-1, var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s), "store double %%var%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
     }
     else
-      sprintf($$.s+strlen($$.s), "\tstore double %%tmp%d, double* %%%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s), "store double %%var%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
   }
 
   if(strlen(type_assignement)>0){
@@ -385,7 +385,7 @@ declarator_list
     //yyerror("Variable deja declare\n");
   }
   ht_add(&hash_table_new, $1.s, str1, t);
-  printf("\t%%%s = alloca %s\n", str1, type_name);
+  printf("@%s = common global %s 0\n", str1, type_name);
  }
 | declarator_list ',' declarator {
   sprintf(block_vars[nb_vars], "%s", $3.s); nb_vars++;
@@ -396,7 +396,7 @@ declarator_list
   }
   
   ht_add(&hash_table_new, str2, str2, t);
-  printf("\t%%%s = alloca %s\n", str2, type_name);
+  printf("@%s = common global %s 0\n", str2, type_name);
   }
 ;
 
@@ -458,42 +458,42 @@ selection_statement
   char *str3 = $3.s;
   char *str5 = $5.s;
   sprintf($$.s, "%s", str3);
-  sprintf($$.s+strlen($$.s), "\tbr i1 %%result%d, label %%label%d, label %%label%d\n\n", results-1, labels, labels+1);
+  sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %%label%d, label %%label%d\n\n", results-1, labels, labels+1);
   sprintf($$.s+strlen($$.s), "label%d:\n", labels);
   labels++;
   /* expr */
   sprintf($$.s+strlen($$.s), "%s\n", str5);
-  sprintf($$.s+strlen($$.s), "\tbr label %%label%d\n \nlabel%d:\n;;", labels, labels);
+  sprintf($$.s+strlen($$.s), "br label %%label%d\n \nlabel%d:\n;;", labels, labels);
   labels++;
  }
 | IF '(' expression ')' statement ELSE statement {
   sprintf($$.s, "%s", $3.s);
-  sprintf($$.s+strlen($$.s), "\tbr i1 %%result%d, label %%label%d, label %%label%d\n\n", results-1, labels, labels+1);
+  sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %%label%d, label %%label%d\n\n", results-1, labels, labels+1);
   sprintf($$.s+strlen($$.s), "label%d:\n", labels);
   labels++;
   /* expr */
   sprintf($$.s+strlen($$.s), "%s\n", $5.s);
-  sprintf($$.s+strlen($$.s), "\tbr label %%label%d\n", labels+2);
+  sprintf($$.s+strlen($$.s), "br label %%label%d\n", labels+2);
   sprintf($$.s+strlen($$.s), "label%d:\n", labels);
   labels++;
   /* expr */
   sprintf($$.s+strlen($$.s), "%s\n", $7.s);
-  sprintf($$.s+strlen($$.s), "\tbr label %%label%d\n \nlabel%d:\n;;", labels+1, labels+1);
+  sprintf($$.s+strlen($$.s), "br label %%label%d\n \nlabel%d:\n;;", labels+1, labels+1);
   labels++;
   }
 | FOR '(' expression_statement expression_statement expression ')' statement {
   sprintf($$.s, "%s", $3.s);
-  sprintf($$.s+strlen($$.s), "\tbr label %%loop%d\n \nloop%d:\n", loops, loops);
+  sprintf($$.s+strlen($$.s), "br label %%loop%d\n \nloop%d:\n", loops, loops);
   loops++;
   sprintf($$.s+strlen($$.s), "%s", $4.s);
-  sprintf($$.s+strlen($$.s), "\tbr i1 %%result%d, label %%loop%d, label %%loop%d\n\n", results-1, loops, loops+1);
+  sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %%loop%d, label %%loop%d\n\n", results-1, loops, loops+1);
   sprintf($$.s+strlen($$.s), "loop%d:\n", loops);
   /* i=i+1 */
   sprintf($$.s+strlen($$.s), "%s", $5.s);
   /* contenu boucle */
   sprintf($$.s+strlen($$.s), "%s", $7.s);
   /* on revient au début de la boucle */
-  sprintf($$.s+strlen($$.s), "\tbr label %%loop%d\n", loops-1);
+  sprintf($$.s+strlen($$.s), "br label %%loop%d\n", loops-1);
   sprintf($$.s+strlen($$.s), "loop%d:\n;;", loops+1);
  loops++;
   }
@@ -502,13 +502,13 @@ selection_statement
 iteration_statement
 : WHILE '(' expression ')' statement
 {
-  sprintf($$.s, "\tbr label %%label%d\n \nlabel%d:\n", labels, labels);
+  sprintf($$.s, "br label %%label%d\n \nlabel%d:\n", labels, labels);
   labels++;
   sprintf($$.s+strlen($$.s), "%s", $3.s);
-  sprintf($$.s+strlen($$.s), "\tbr i1 %%result%d, label %%loop%d, label %%loop%d\n", results-1, loops, loops+1);
-  sprintf($$.s+strlen($$.s), "\t\nloop%d:\n", loops);
+  sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %%loop%d, label %%loop%d\n", results-1, loops, loops+1);
+  sprintf($$.s+strlen($$.s), "\nloop%d:\n", loops);
   sprintf($$.s+strlen($$.s), "%s", $5.s);
-  sprintf($$.s+strlen($$.s), "\tbr label %%label%d\n \nloop%d:\n;;", labels-1, loops+1);
+  sprintf($$.s+strlen($$.s), "br label %%label%d\n \nloop%d:\n;;", labels-1, loops+1);
   loops+=2;
   labels++;
 }
@@ -580,7 +580,7 @@ int main (int argc, char *argv[]) {
     /* Ajout des fonctions utilisables */
     ht_add(&hash_table_new, "createCanvas",             "createCanvas",             V_DOUBLE);
     ht_add(&hash_table_new, "background",           "background",           V_DOUBLE);
-    ht_add(&hash_table_new, "pos_to_middle",          "pos_to_middle",          V_DOUBLE);
+    ht_add(&hash_table_new, "square",          "square",          V_DOUBLE);
     ht_add(&hash_table_new, "pos_to_left",            "pos_to_left",            V_DOUBLE);
     ht_add(&hash_table_new, "pos_to_start",           "pos_to_start",           V_DOUBLE);
     ht_add(&hash_table_new, "track_seg_length",       "track_seg_length",       V_DOUBLE);

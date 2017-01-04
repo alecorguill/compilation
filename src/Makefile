@@ -4,7 +4,7 @@ CFLAGS=-Wall
 CC=gcc
 TEST = test/test_1.txt
 
-all:parse
+all:clean parse
 
 parse:grammar.c scanner.c
 	$(CC) $(CFLAGS) -o $@ $^
@@ -15,7 +15,7 @@ grammar.c:grammar.y
 %.c:%.l
 	$(LEX) -o $@ $^
 
-test:parse
+test:clean parse
 	./parse $(TEST)
 clean:
 	rm -f grammar.c scanner.c *~
