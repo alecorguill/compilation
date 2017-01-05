@@ -7,11 +7,11 @@
 #define V_INT        1//0x1//0x8
 #define V_DOUBLE      1<<1//0x2//0x10
 #define V_VOID       1<<2//0x0//0x4
-#define V_WRITABLE   1<<3//0x4
-#define V_DECLARED   1<<4//0x8
-#define V_FUNCTION   1<<5//0x20
-#define V_SPECIAL    1<<6//(0x1<<16)
-#define V_MODIFIED   1<<7//(0x1<<17)
+#define V_WRITABLE   1<<3//0x8
+#define V_DECLARED   1<<4//0x16
+#define V_FUNCTION   1<<5//0x32
+#define V_SPECIAL    1<<6//0x64
+#define V_MODIFIED   1<<7//0x128
 #define V_ARGS       0x1F<<8
 #define SIZE_MAX 32
 
