@@ -134,11 +134,12 @@ typedef union YYSTYPE
   struct val{
     int type;
     char s[40000];
+    int reg;
   }val;
  
 
 /* Line 387 of yacc.c  */
-#line 142 "grammar.c"
+#line 143 "grammar.c"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -165,7 +166,7 @@ int yyparse ();
 
 /* Copy the second part of user declarations.  */
 /* Line 390 of yacc.c  */
-#line 8 "grammar.y"
+#line 9 "grammar.y"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -179,7 +180,7 @@ int yyparse ();
   const char* types[] = {"void", "i32", "double"};
 
   char type_assignement[4];
-  char type_name[5];
+  char type_name[6];
 
   int tmps = 0;		        /* pour les variables temporaires */
   int labels = 0; 		/* pour les boucles if */
@@ -227,8 +228,8 @@ int yyparse ();
     	  fonctions_args[3*i+2] = "ok";
     	}
     	sprintf(buf, "%s", str2);
-    	sprintf(buf+strlen(buf), "%%var%d = call double %s %%var%d)\n", tmps, fonctions_args[3*i+1], tmps-1);
-    	sprintf(buf+strlen(buf), "store double %%var%d, double* @%s\n", tmps, str1);
+    	sprintf(buf+strlen(buf), "%%r%d = call double %s %%r%d)\n", tmps, fonctions_args[3*i+1], tmps-1);
+    	sprintf(buf+strlen(buf), "store double %%r%d, double* @%s\n", tmps, str1);
     	tmps++;
     	return;
       }
@@ -266,18 +267,18 @@ int yyparse ();
 	sprintf(type_operation, "sdiv");
       else
 	sprintf(type_operation, "%s", type_op);
-      sprintf(dst+strlen(dst), "%%var%d = %s i32 %%var%d, %%var%d\n", tmps, type_operation, tmps-2, tmps-1);
+      sprintf(dst+strlen(dst), "%%r%d = %s i32 %%r%d, %%r%d\n", tmps, type_operation, tmps-2, tmps-1);
     }
 
     else{			/* double */
-      sprintf(dst+strlen(dst), "%%var%d = %s double %%var%d, %%var%d\n", tmps, type_op, tmps-2, tmps-1);
+      sprintf(dst+strlen(dst), "%%r%d = %s double %%r%d, %%r%d\n", tmps, type_op, tmps-2, tmps-1);
     }
 
     tmps+=1;
     return t1;
   }
 
-  int print_value(struct val s1, char *dst){
+ int print_value(struct val s1, char *dst){
     char *str1 = s1.s;
     char *buf1 = buf;
     memset(dst,0,sizeof(dst));
@@ -285,19 +286,19 @@ int yyparse ();
     int t;
     if(s1.type == 0){
       v = ht_get(&hash_table_new, str1);
+      if (var_is_declared(v)){
+      	t = var_get_type(v);
+      }
 
-      if (var_is_declared(v))
-	t = var_get_type(v);
-      else
-	//yyerror("Variable non definie");	
 
-	sprintf(dst, "\n");
-
-      if (var_is_special(v))
-	sprintf(dst+strlen(dst), "%%var%d = load %s* @%s\n", tmps, types[t], var_get_llvm_name(v));
-      else
-	sprintf(dst+strlen(dst), "%%var%d = load %s* @%s\n", tmps, types[t], var_get_name(v));
-  
+      if (var_is_special(v)){
+	sprintf(dst+strlen(dst), "r%d = load %s* @%s\n", tmps, types[t], var_get_llvm_name(v));
+	printf("%s\n",dst);
+      }
+      else{
+	sprintf(dst+strlen(dst), "r%d = load %s* @%s\n", tmps, types[t], var_get_name(v));
+	printf("%s\n",dst);
+      }
       tmps++;
       return t; 
     }
@@ -315,7 +316,6 @@ int yyparse ();
     return -1;
   }
 
-
   int compare(struct val s1, struct val s2, char *dest, char int_comparison[3], char double_comparison[3]){
     char *str1 = s1.s;
     char *str2 = s2.s;
@@ -332,7 +332,7 @@ int yyparse ();
     }
     
     sprintf(dest, "%s %s", str1, str2);
-    sprintf(dest+strlen(dest), "%%result%d = %ccmp %s %s %%var%d, %%var%d\n\n", results, c, c2, types[s1.type], tmps-2, tmps-1);
+    sprintf(dest+strlen(dest), "%%result%d = %ccmp %s %s %%r%d, %%r%d\n\n", results, c, c2, types[s1.type], tmps-2, tmps-1);
     ;
     results++;
     return s1.type;
@@ -1726,22 +1726,16 @@ yyreduce:
     {(yyval.val).type=(yyvsp[(3) - (3)].val).type;sprintf((yyval.val).s, "%s", (yyvsp[(1) - (3)].val).s); sprintf((yyval.val).s+strlen((yyval.val).s), "%s", (yyvsp[(3) - (3)].val).s);}
     break;
 
-  case 17:
-/* Line 1792 of yacc.c  */
-#line 252 "grammar.y"
-    {(yyval.val)=(yyvsp[(2) - (2)].val);}
-    break;
-
   case 19:
 /* Line 1792 of yacc.c  */
 #line 260 "grammar.y"
-    {(yyval.val).type=print_value((yyvsp[(1) - (1)].val), (yyval.val).s);}
+    {(yyval.val).type=print_value((yyvsp[(1) - (1)].val), (yyval.val).s);(yyval.val).reg=tmps-1;}
     break;
 
   case 20:
 /* Line 1792 of yacc.c  */
 #line 261 "grammar.y"
-    {(yyval.val).type=print_value((yyvsp[(3) - (3)].val), (yyvsp[(3) - (3)].val).s); struct val v; sprintf(v.s, "%s", (yyvsp[(3) - (3)].val).s); v.type = (yyval.val).type; (yyval.val).type=print_values((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val), "mul", (yyval.val).s);}
+    {(yyval.val).type=print_value((yyvsp[(3) - (3)].val), (yyvsp[(3) - (3)].val).s);printf("r%d = mul nsw %s r%d, r%d\n",tmps-1,types[(yyvsp[(1) - (3)].val).type],(yyvsp[(1) - (3)].val).reg,(yyvsp[(3) - (3)].val).reg);}
     break;
 
   case 21:
@@ -1753,7 +1747,7 @@ yyreduce:
   case 23:
 /* Line 1792 of yacc.c  */
 #line 267 "grammar.y"
-    {(yyval.val).type=print_values((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val), "add", (yyval.val).s);}
+    {printf("r%d = add nsw %s r%d, r%d\n", tmps,types[(yyvsp[(1) - (3)].val).type],(yyvsp[(1) - (3)].val).reg,(yyvsp[(3) - (3)].val).reg);tmps++;}
     break;
 
   case 24:
@@ -1830,29 +1824,29 @@ yyreduce:
     }
 
     if(var_is_special(v)){
-      sprintf((yyval.val).s+strlen((yyval.val).s),"%%var%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
+      sprintf((yyval.val).s+strlen((yyval.val).s),"%%r%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
     }
     else{
-      sprintf((yyval.val).s+strlen((yyval.val).s),"%%var%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
+      sprintf((yyval.val).s+strlen((yyval.val).s),"%%r%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
     }
-    sprintf((yyval.val).s+strlen((yyval.val).s), "%%var%d = %c%s %s %%var%d, %%var%d\n", tmps+1, assign, type_assignement, a_type, tmps-1, tmps);
+    sprintf((yyval.val).s+strlen((yyval.val).s), "%%r%d = %c%s %s %%r%d, %%r%d\n", tmps+1, assign, type_assignement, a_type, tmps-1, tmps);
   }
 
   if (t1==1){ 			/* int */
     if (var_is_special(v)){
-      sprintf((yyval.val).s+strlen((yyval.val).s), "store i32 %%var%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf((yyval.val).s+strlen((yyval.val).s), "store i32 %%r%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
       var_set_modified(v, V_MODIFIED);
     }
     else
-      sprintf((yyval.val).s+strlen((yyval.val).s), "store i32 %%var%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf((yyval.val).s+strlen((yyval.val).s), "store i32 %%r%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
   }
   else{				/* double */
     if (var_is_special(v)){
       var_set_modified(v, V_MODIFIED);
-      sprintf((yyval.val).s+strlen((yyval.val).s), "store double %%var%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf((yyval.val).s+strlen((yyval.val).s), "store double %%r%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
     }
     else
-      sprintf((yyval.val).s+strlen((yyval.val).s), "store double %%var%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf((yyval.val).s+strlen((yyval.val).s), "store double %%r%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
   }
 
   if(strlen(type_assignement)>0){
@@ -1898,7 +1892,7 @@ yyreduce:
   int t = (strcmp(type_name, "i32") == 0)?V_INT:V_DOUBLE;
   char *str1 = (yyvsp[(1) - (1)].val).s;
   if(ht_exists(&hash_table_new, str1)){
-    //yyerror("Variable deja declare\n");
+    yyerror("Variable deja declare\n");
   }
   ht_add(&hash_table_new, (yyvsp[(1) - (1)].val).s, str1, t);
   printf("@%s = common global %s 0\n", str1, type_name);
@@ -1913,7 +1907,7 @@ yyreduce:
   int t = (strcmp(type_name, "i32") == 0)?V_INT:V_DOUBLE;
   char *str2 = (yyvsp[(3) - (3)].val).s;
   if(ht_exists(&hash_table_new, str2)){
-    //yyerror("Variable deja declare\n");
+    yyerror("Variable deja declare\n");
   }
   ht_add(&hash_table_new, str2, str2, t);
   printf("@%s = common global %s 0\n", str2, type_name);
@@ -1953,7 +1947,7 @@ yyreduce:
   case 49:
 /* Line 1792 of yacc.c  */
 #line 388 "grammar.y"
-    {printf("declare %s @%s\n",types[(yyval.val).type],(yyvsp[(1) - (3)].val).s);}
+    {printf("declare %s @%s() {\n",types[(yyval.val).type],(yyvsp[(1) - (3)].val).s);}
     break;
 
   case 53:
@@ -2029,12 +2023,12 @@ yyreduce:
   char *str3 = (yyvsp[(3) - (5)].val).s;
   char *str5 = (yyvsp[(5) - (5)].val).s;
   sprintf((yyval.val).s, "%s", str3);
-  sprintf((yyval.val).s+strlen((yyval.val).s), "br i1 %%result%d, label %%label%d, label %%label%d\n\n", results-1, labels, labels+1);
+  sprintf((yyval.val).s+strlen((yyval.val).s), "br i1 %%result%d, label %d, label %d\n\n", results-1, labels, labels+1);
   sprintf((yyval.val).s+strlen((yyval.val).s), "label%d:\n", labels);
   labels++;
   /* expr */
   sprintf((yyval.val).s+strlen((yyval.val).s), "%s\n", str5);
-  sprintf((yyval.val).s+strlen((yyval.val).s), "br label %%label%d\n \nlabel%d:\n;;", labels, labels);
+  sprintf((yyval.val).s+strlen((yyval.val).s), "br label %d\n \nlabel%d:\n;;", labels, labels);
   labels++;
  }
     break;
@@ -2044,17 +2038,17 @@ yyreduce:
 #line 442 "grammar.y"
     {
   sprintf((yyval.val).s, "%s", (yyvsp[(3) - (7)].val).s);
-  sprintf((yyval.val).s+strlen((yyval.val).s), "br i1 %%result%d, label %%label%d, label %%label%d\n\n", results-1, labels, labels+1);
+  sprintf((yyval.val).s+strlen((yyval.val).s), "br i1 %%result%d, label %d, label %d\n\n", results-1, labels, labels+1);
   sprintf((yyval.val).s+strlen((yyval.val).s), "label%d:\n", labels);
   labels++;
   /* expr */
   sprintf((yyval.val).s+strlen((yyval.val).s), "%s\n", (yyvsp[(5) - (7)].val).s);
-  sprintf((yyval.val).s+strlen((yyval.val).s), "br label %%label%d\n", labels+2);
+  sprintf((yyval.val).s+strlen((yyval.val).s), "br label %d\n", labels+2);
   sprintf((yyval.val).s+strlen((yyval.val).s), "label%d:\n", labels);
   labels++;
   /* expr */
   sprintf((yyval.val).s+strlen((yyval.val).s), "%s\n", (yyvsp[(7) - (7)].val).s);
-  sprintf((yyval.val).s+strlen((yyval.val).s), "br label %%label%d\n \nlabel%d:\n;;", labels+1, labels+1);
+  sprintf((yyval.val).s+strlen((yyval.val).s), "br label %d\n \nlabel%d:\n;;", labels+1, labels+1);
   labels++;
   }
     break;
@@ -2064,18 +2058,18 @@ yyreduce:
 #line 457 "grammar.y"
     {
   sprintf((yyval.val).s, "%s", (yyvsp[(3) - (7)].val).s);
-  sprintf((yyval.val).s+strlen((yyval.val).s), "br label %%loop%d\n \nloop%d:\n", loops, loops);
+  sprintf((yyval.val).s+strlen((yyval.val).s), "br label %d\n \n; <label>:%d\n", loops, loops);
   loops++;
   sprintf((yyval.val).s+strlen((yyval.val).s), "%s", (yyvsp[(4) - (7)].val).s);
-  sprintf((yyval.val).s+strlen((yyval.val).s), "br i1 %%result%d, label %%loop%d, label %%loop%d\n\n", results-1, loops, loops+1);
-  sprintf((yyval.val).s+strlen((yyval.val).s), "loop%d:\n", loops);
+  sprintf((yyval.val).s+strlen((yyval.val).s), "br i1 %%result%d, label %d, label %d\n\n", results-1, loops, loops+1);
+  sprintf((yyval.val).s+strlen((yyval.val).s), "; <label>:%d\n", loops);
   /* i=i+1 */
   sprintf((yyval.val).s+strlen((yyval.val).s), "%s", (yyvsp[(5) - (7)].val).s);
   /* contenu boucle */
   sprintf((yyval.val).s+strlen((yyval.val).s), "%s", (yyvsp[(7) - (7)].val).s);
   /* on revient au début de la boucle */
-  sprintf((yyval.val).s+strlen((yyval.val).s), "br label %%loop%d\n", loops-1);
-  sprintf((yyval.val).s+strlen((yyval.val).s), "loop%d:\n;;", loops+1);
+  sprintf((yyval.val).s+strlen((yyval.val).s), "br label %d\n", loops-1);
+  sprintf((yyval.val).s+strlen((yyval.val).s), "; <label>:%d\n;;", loops+1);
  loops++;
   }
     break;
@@ -2084,13 +2078,13 @@ yyreduce:
 /* Line 1792 of yacc.c  */
 #line 477 "grammar.y"
     {
-  sprintf((yyval.val).s, "br label %%label%d\n \nlabel%d:\n", labels, labels);
+  sprintf((yyval.val).s, "br label %d\n \nlabel%d:\n", labels, labels);
   labels++;
   sprintf((yyval.val).s+strlen((yyval.val).s), "%s", (yyvsp[(3) - (5)].val).s);
-  sprintf((yyval.val).s+strlen((yyval.val).s), "br i1 %%result%d, label %%loop%d, label %%loop%d\n", results-1, loops, loops+1);
-  sprintf((yyval.val).s+strlen((yyval.val).s), "\nloop%d:\n", loops);
+  sprintf((yyval.val).s+strlen((yyval.val).s), "br i1 %%result%d, label %d, label %d\n", results-1, loops, loops+1);
+  sprintf((yyval.val).s+strlen((yyval.val).s), "\n; <label>:%d\n", loops);
   sprintf((yyval.val).s+strlen((yyval.val).s), "%s", (yyvsp[(5) - (5)].val).s);
-  sprintf((yyval.val).s+strlen((yyval.val).s), "br label %%label%d\n \nloop%d:\n;;", labels-1, loops+1);
+  sprintf((yyval.val).s+strlen((yyval.val).s), "br label %d\n \n; <label>:%d\n;;", labels-1, loops+1);
   loops+=2;
   labels++;
 }
@@ -2111,12 +2105,12 @@ yyreduce:
   case 77:
 /* Line 1792 of yacc.c  */
 #line 506 "grammar.y"
-    {(yyvsp[(2) - (3)].val).type=type_name;printf("%s\n", (yyvsp[(3) - (3)].val).s);}
+    {(yyvsp[(2) - (3)].val).type=type_name;printf("%s\n", (yyvsp[(3) - (3)].val).s);printf("}\n");}
     break;
 
 
 /* Line 1792 of yacc.c  */
-#line 2120 "grammar.c"
+#line 2114 "grammar.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2363,7 +2357,7 @@ char *file_name = NULL;
 int yyerror (char *s) {
     fflush (stdout);
     fprintf (stderr, "%s:%d:%d: %s\n", file_name, yylineno, column, s);
-    return 0;
+    exit(1);
 }
 
 

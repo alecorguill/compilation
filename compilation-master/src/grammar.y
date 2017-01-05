@@ -2,6 +2,7 @@
   struct val{
     int type;
     char s[40000];
+    int reg;
   }val;
  };
 
@@ -66,8 +67,8 @@
     	  fonctions_args[3*i+2] = "ok";
     	}
     	sprintf(buf, "%s", str2);
-    	sprintf(buf+strlen(buf), "%%var%d = call double %s %%var%d)\n", tmps, fonctions_args[3*i+1], tmps-1);
-    	sprintf(buf+strlen(buf), "store double %%var%d, double* @%s\n", tmps, str1);
+    	sprintf(buf+strlen(buf), "%%r%d = call double %s %%r%d)\n", tmps, fonctions_args[3*i+1], tmps-1);
+    	sprintf(buf+strlen(buf), "store double %%r%d, double* @%s\n", tmps, str1);
     	tmps++;
     	return;
       }
@@ -105,18 +106,18 @@
 	sprintf(type_operation, "sdiv");
       else
 	sprintf(type_operation, "%s", type_op);
-      sprintf(dst+strlen(dst), "%%var%d = %s i32 %%var%d, %%var%d\n", tmps, type_operation, tmps-2, tmps-1);
+      sprintf(dst+strlen(dst), "%%r%d = %s i32 %%r%d, %%r%d\n", tmps, type_operation, tmps-2, tmps-1);
     }
 
     else{			/* double */
-      sprintf(dst+strlen(dst), "%%var%d = %s double %%var%d, %%var%d\n", tmps, type_op, tmps-2, tmps-1);
+      sprintf(dst+strlen(dst), "%%r%d = %s double %%r%d, %%r%d\n", tmps, type_op, tmps-2, tmps-1);
     }
 
     tmps+=1;
     return t1;
   }
 
-  int print_value(struct val s1, char *dst){
+ int print_value(struct val s1, char *dst){
     char *str1 = s1.s;
     char *buf1 = buf;
     memset(dst,0,sizeof(dst));
@@ -124,19 +125,19 @@
     int t;
     if(s1.type == 0){
       v = ht_get(&hash_table_new, str1);
+      if (var_is_declared(v)){
+      	t = var_get_type(v);
+      }
 
-      if (var_is_declared(v))
-	t = var_get_type(v);
-      else
-	//yyerror("Variable non definie");	
 
-	sprintf(dst, "\n");
-
-      if (var_is_special(v))
-	sprintf(dst+strlen(dst), "%%var%d = load %s* @%s\n", tmps, types[t], var_get_llvm_name(v));
-      else
-	sprintf(dst+strlen(dst), "%%var%d = load %s* @%s\n", tmps, types[t], var_get_name(v));
-  
+      if (var_is_special(v)){
+	sprintf(dst+strlen(dst), "r%d = load %s* @%s\n", tmps, types[t], var_get_llvm_name(v));
+	printf("%s\n",dst);
+      }
+      else{
+	sprintf(dst+strlen(dst), "r%d = load %s* @%s\n", tmps, types[t], var_get_name(v));
+	printf("%s\n",dst);
+      }
       tmps++;
       return t; 
     }
@@ -154,7 +155,6 @@
     return -1;
   }
 
-
   int compare(struct val s1, struct val s2, char *dest, char int_comparison[3], char double_comparison[3]){
     char *str1 = s1.s;
     char *str2 = s2.s;
@@ -171,7 +171,7 @@
     }
     
     sprintf(dest, "%s %s", str1, str2);
-    sprintf(dest+strlen(dest), "%%result%d = %ccmp %s %s %%var%d, %%var%d\n\n", results, c, c2, types[s1.type], tmps-2, tmps-1);
+    sprintf(dest+strlen(dest), "%%result%d = %ccmp %s %s %%r%d, %%r%d\n\n", results, c, c2, types[s1.type], tmps-2, tmps-1);
     ;
     results++;
     return s1.type;
@@ -249,7 +249,7 @@ unary_expression
 : postfix_expression 
 | INC_OP unary_expression
 | DEC_OP unary_expression
-| unary_operator unary_expression {$$=$2;}
+| unary_operator unary_expression
 ;
 
 unary_operator
@@ -257,14 +257,14 @@ unary_operator
 ;
 
 multiplicative_expression
-: unary_expression {$$.type=print_value($1, $$.s);}
-| multiplicative_expression '*' unary_expression {$$.type=print_value($3, $3.s); struct val v; sprintf(v.s, "%s", $3.s); v.type = $$.type; $$.type=print_values($1, $3, "mul", $$.s);}
+: unary_expression {$$.type=print_value($1, $$.s);$$.reg=tmps-1;}
+| multiplicative_expression '*' unary_expression {$$.type=print_value($3, $3.s);printf("r%d = mul nsw %s r%d, r%d\n",tmps-1,types[$1.type],$1.reg,$3.reg);}//$$.type=print_values($1, $3, "mul", $$.s);}
 | multiplicative_expression '/' unary_expression {$$.type=print_value($3, $3.s); struct val v; sprintf(v.s, "%s", $3.s); v.type = $$.type; $$.type=print_values($1, v, "div", $$.s);}
 ;
 
 additive_expression
 : multiplicative_expression
-| additive_expression '+' multiplicative_expression {$$.type=print_values($1, $3, "add", $$.s);}
+| additive_expression '+' multiplicative_expression {printf("r%d = add nsw %s r%d, r%d\n", tmps,types[$1.type],$1.reg,$3.reg);tmps++;}//$$.type=print_values($1, $3, "add", $$.s);}
 | additive_expression '-' multiplicative_expression {$$.type=print_values($1, $3, "sub", $$.s);}
 ;
 
@@ -308,29 +308,29 @@ expression
     }
 
     if(var_is_special(v)){
-      sprintf($$.s+strlen($$.s),"%%var%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s),"%%r%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
     }
     else{
-      sprintf($$.s+strlen($$.s),"%%var%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s),"%%r%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
     }
-    sprintf($$.s+strlen($$.s), "%%var%d = %c%s %s %%var%d, %%var%d\n", tmps+1, assign, type_assignement, a_type, tmps-1, tmps);
+    sprintf($$.s+strlen($$.s), "%%r%d = %c%s %s %%r%d, %%r%d\n", tmps+1, assign, type_assignement, a_type, tmps-1, tmps);
   }
 
   if (t1==1){ 			/* int */
     if (var_is_special(v)){
-      sprintf($$.s+strlen($$.s), "store i32 %%var%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s), "store i32 %%r%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
       var_set_modified(v, V_MODIFIED);
     }
     else
-      sprintf($$.s+strlen($$.s), "store i32 %%var%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s), "store i32 %%r%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
   }
   else{				/* double */
     if (var_is_special(v)){
       var_set_modified(v, V_MODIFIED);
-      sprintf($$.s+strlen($$.s), "store double %%var%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s), "store double %%r%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
     }
     else
-      sprintf($$.s+strlen($$.s), "store double %%var%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s), "store double %%r%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
   }
 
   if(strlen(type_assignement)>0){
@@ -356,7 +356,7 @@ declarator_list
   int t = (strcmp(type_name, "i32") == 0)?V_INT:V_DOUBLE;
   char *str1 = $1.s;
   if(ht_exists(&hash_table_new, str1)){
-    //yyerror("Variable deja declare\n");
+    yyerror("Variable deja declare\n");
   }
   ht_add(&hash_table_new, $1.s, str1, t);
   printf("@%s = common global %s 0\n", str1, type_name);
@@ -366,7 +366,7 @@ declarator_list
   int t = (strcmp(type_name, "i32") == 0)?V_INT:V_DOUBLE;
   char *str2 = $3.s;
   if(ht_exists(&hash_table_new, str2)){
-    //yyerror("Variable deja declare\n");
+    yyerror("Variable deja declare\n");
   }
   ht_add(&hash_table_new, str2, str2, t);
   printf("@%s = common global %s 0\n", str2, type_name);
@@ -385,7 +385,7 @@ declarator
 | declarator '[' CONSTANTI ']'       {yyerror("Les tableaux ne sont pas geres");}
 | declarator '[' ']'                 {yyerror("Les tableaux ne sont pas geres");}
 | declarator '(' parameter_list ')'  
-| declarator '(' ')'                 {printf("declare %s @%s\n",types[$$.type],$1.s)}
+| declarator '(' ')'                 {printf("declare %s @%s() {\n",types[$$.type],$1.s);}
 ;
 
 parameter_list
@@ -406,7 +406,7 @@ statement
 ;
 
 compound_statement
-: '{' '}'
+: '{' '}' 
 | '{' statement_list '}' {char *str2 = $2.s; $$.type=$2.type; sprintf($$.s, "%s", str2);}
 | '{' declaration_list statement_list '}' {rm_vars(); nb_vars=0;char *str3 = $3.s; sprintf($$.s, "%s", str3);}
 ;
@@ -431,43 +431,43 @@ selection_statement
   char *str3 = $3.s;
   char *str5 = $5.s;
   sprintf($$.s, "%s", str3);
-  sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %%label%d, label %%label%d\n\n", results-1, labels, labels+1);
+  sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %d, label %d\n\n", results-1, labels, labels+1);
   sprintf($$.s+strlen($$.s), "label%d:\n", labels);
   labels++;
   /* expr */
   sprintf($$.s+strlen($$.s), "%s\n", str5);
-  sprintf($$.s+strlen($$.s), "br label %%label%d\n \nlabel%d:\n;;", labels, labels);
+  sprintf($$.s+strlen($$.s), "br label %d\n \nlabel%d:\n;;", labels, labels);
   labels++;
  }
 | IF '(' expression ')' statement ELSE statement {
   sprintf($$.s, "%s", $3.s);
-  sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %%label%d, label %%label%d\n\n", results-1, labels, labels+1);
+  sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %d, label %d\n\n", results-1, labels, labels+1);
   sprintf($$.s+strlen($$.s), "label%d:\n", labels);
   labels++;
   /* expr */
   sprintf($$.s+strlen($$.s), "%s\n", $5.s);
-  sprintf($$.s+strlen($$.s), "br label %%label%d\n", labels+2);
+  sprintf($$.s+strlen($$.s), "br label %d\n", labels+2);
   sprintf($$.s+strlen($$.s), "label%d:\n", labels);
   labels++;
   /* expr */
   sprintf($$.s+strlen($$.s), "%s\n", $7.s);
-  sprintf($$.s+strlen($$.s), "br label %%label%d\n \nlabel%d:\n;;", labels+1, labels+1);
+  sprintf($$.s+strlen($$.s), "br label %d\n \nlabel%d:\n;;", labels+1, labels+1);
   labels++;
   }
 | FOR '(' expression_statement expression_statement expression ')' statement {
   sprintf($$.s, "%s", $3.s);
-  sprintf($$.s+strlen($$.s), "br label %%loop%d\n \nloop%d:\n", loops, loops);
+  sprintf($$.s+strlen($$.s), "br label %d\n \n; <label>:%d\n", loops, loops);
   loops++;
   sprintf($$.s+strlen($$.s), "%s", $4.s);
-  sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %%loop%d, label %%loop%d\n\n", results-1, loops, loops+1);
-  sprintf($$.s+strlen($$.s), "loop%d:\n", loops);
+  sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %d, label %d\n\n", results-1, loops, loops+1);
+  sprintf($$.s+strlen($$.s), "; <label>:%d\n", loops);
   /* i=i+1 */
   sprintf($$.s+strlen($$.s), "%s", $5.s);
   /* contenu boucle */
   sprintf($$.s+strlen($$.s), "%s", $7.s);
   /* on revient au début de la boucle */
-  sprintf($$.s+strlen($$.s), "br label %%loop%d\n", loops-1);
-  sprintf($$.s+strlen($$.s), "loop%d:\n;;", loops+1);
+  sprintf($$.s+strlen($$.s), "br label %d\n", loops-1);
+  sprintf($$.s+strlen($$.s), "; <label>:%d\n;;", loops+1);
  loops++;
   }
 ;
@@ -475,13 +475,13 @@ selection_statement
 iteration_statement
 : WHILE '(' expression ')' statement
 {
-  sprintf($$.s, "br label %%label%d\n \nlabel%d:\n", labels, labels);
+  sprintf($$.s, "br label %d\n \nlabel%d:\n", labels, labels);
   labels++;
   sprintf($$.s+strlen($$.s), "%s", $3.s);
-  sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %%loop%d, label %%loop%d\n", results-1, loops, loops+1);
-  sprintf($$.s+strlen($$.s), "\nloop%d:\n", loops);
+  sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %d, label %d\n", results-1, loops, loops+1);
+  sprintf($$.s+strlen($$.s), "\n; <label>:%d\n", loops);
   sprintf($$.s+strlen($$.s), "%s", $5.s);
-  sprintf($$.s+strlen($$.s), "br label %%label%d\n \nloop%d:\n;;", labels-1, loops+1);
+  sprintf($$.s+strlen($$.s), "br label %d\n \n; <label>:%d\n;;", labels-1, loops+1);
   loops+=2;
   labels++;
 }
@@ -503,7 +503,7 @@ external_declaration
 ;
 
 function_definition
-: type_name declarator compound_statement  {$2.type=type_name;printf("%s\n", $3.s);}
+: type_name declarator compound_statement  {$2.type=type_name;printf("%s\n", $3.s);printf("}\n");}
 ;
 
 %%
@@ -520,7 +520,7 @@ char *file_name = NULL;
 int yyerror (char *s) {
     fflush (stdout);
     fprintf (stderr, "%s:%d:%d: %s\n", file_name, yylineno, column, s);
-    return 0;
+    exit(1);
 }
 
 

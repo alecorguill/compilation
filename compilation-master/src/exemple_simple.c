@@ -1,7 +1,7 @@
-int mul_add(int x, int y, int z) {
-  return x * y + z;
-}
 int main(){
-  mul_add(2,3,4);
-  toto();
+  int i;
+  int j;
+  int k;
+  i = i*j+k;
+  k=i*3;
 }

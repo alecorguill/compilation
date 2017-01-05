@@ -80,11 +80,12 @@ typedef union YYSTYPE
   struct val{
     int type;
     char s[40000];
+    int reg;
   }val;
  
 
 /* Line 2058 of yacc.c  */
-#line 88 "grammar.h"
+#line 89 "grammar.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
