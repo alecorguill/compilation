@@ -200,21 +200,6 @@ int yyparse ();
     }
   }
 
-  char* fonctions[21]={
-    "c",             "declare void @createCanvas(i32,i32)"         , "no",
-    "b",           "@get_pos_to_right(%struct.tTrkLocPos* %pos)"        , "no",
-    "square",          "@get_pos_to_middle(%struct.tTrkLocPos* %pos)"       , "no",
-    "mul_add",            "@get_pos_to_left(%struct.tTrkLocPos* %pos)"         , "no",
-    "pos_to_start",           "@get_pos_to_start(%struct.tTrkLocPos* %pos)"        , "no",
-    "track_seg_length",       "@get_track_seg_length(%struct.trackSeg* %seg)"      , "no",
-    "track_seg_width",        "@get_track_seg_width(%struct.trackSeg* %seg)"       , "no",
-    "track_seg_start_width",  "@get_track_seg_start_width(%struct.trackSeg* %seg)" , "no",
-    "track_seg_end_width",    "@get_track_seg_end_width(%struct.trackSeg* %seg)"   , "no",
-    "track_seg_radius",       "@get_track_seg_radius(%struct.trackSeg* %seg)"      , "no",
-    "track_seg_right_radius", "@get_track_seg_right_radius(%struct.trackSeg* %seg)", "no",
-    "track_seg_left_radius",  "@get_track_seg_left_radius(%struct.trackSeg* %seg)" , "no",
-    "track_seg_arc",          "@get_track_seg_arc(%struct.trackSeg* %seg)"         , "no",
-    "car_angle",              "@get_car_yaw(%struct.CarElt* %car)"                 , "no",};
 
   char *fonctions_args[3]={
     "norm_pi_pi", "@norm_pi_pi(double", "no"};
@@ -223,25 +208,11 @@ int yyparse ();
   void is_in_fonctions(char *s, char *dest){
     char *str1 = s;
     char tst[100];
-    int i;
-    if (ht_exists(&hash_table_new,"toto"))
+    if (ht_exists(&hash_table_new,s))
       printf("exists\n");
     else
-      ht_add(&hash_table_new,s,s,V_DOUBLE);
-    /*for (i=0; i<13; i++){
-      if (strcmp(s, fonctions[3*i])==0){
-	if (strcmp(fonctions[3*i+2], "no")==0){
-	  printf("%%%s = alloca double\n", s);
-	  fonctions[3*i+2] = "ok";
-	}
-	sprintf(dest, "%s", str1);
-  	sprintf(buf, "%%d = call double %s\n", tmps, fonctions[3*i+1]);
-	strcpy(tst,fonctions[3*1+1]);
-  	sprintf(buf+strlen(buf), "store double %%d, double* @%s\n", tmps, str1);
-  	tmps++;
-  	return;
-      }
-      }*/
+      ht_add(&hash_table_new,s,s,V_FUNCTION);
+
     printf("declare %s @%s()\n", s, tst);
   }
 
@@ -251,19 +222,18 @@ int yyparse ();
     int i;
     for (i=0; i<1; i++){
       if (strcmp(str1, fonctions_args[3*i])==0){
-	if (strcmp(fonctions_args[3*i+2], "no")==0){
-	  printf("%%%s = alloca double\n", s1);
-	  fonctions_args[3*i+2] = "ok";
-	}
-	sprintf(buf, "%s", str2);
-  	sprintf(buf+strlen(buf), "%%var%d = call double %s %%var%d)\n", tmps, fonctions_args[3*i+1], tmps-1);
-  	sprintf(buf+strlen(buf), "store double %%var%d, double* @%s\n", tmps, str1);
-  	tmps++;
-  	return;
+    	if (strcmp(fonctions_args[3*i+2], "no")==0){
+    	  printf("%%%s = alloca double\n", s1);
+    	  fonctions_args[3*i+2] = "ok";
+    	}
+    	sprintf(buf, "%s", str2);
+    	sprintf(buf+strlen(buf), "%%var%d = call double %s %%var%d)\n", tmps, fonctions_args[3*i+1], tmps-1);
+    	sprintf(buf+strlen(buf), "store double %%var%d, double* @%s\n", tmps, str1);
+    	tmps++;
+    	return;
       }
     }
     printf("call @%s(%s)\n", s1, s2);
-    //yyerror("Fonction non declaree");
   }
 
   int print_values(struct val s1, struct val s2, char type_op[3], char *dst){
@@ -374,7 +344,7 @@ int yyparse ();
   void print_struct_definition();
 
 /* Line 390 of yacc.c  */
-#line 378 "grammar.c"
+#line 348 "grammar.c"
 
 #ifdef short
 # undef short
@@ -693,14 +663,14 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   258,   258,   259,   260,   261,   262,   263,   264,   265,
-     269,   270,   274,   275,   279,   280,   281,   282,   286,   290,
-     291,   292,   296,   297,   298,   302,   303,   304,   305,   306,
-     307,   308,   312,   370,   374,   375,   376,   377,   381,   385,
-     395,   409,   410,   411,   415,   416,   417,   418,   419,   420,
-     424,   425,   429,   433,   434,   435,   436,   437,   441,   442,
-     443,   447,   448,   452,   453,   457,   458,   462,   474,   489,
-     508,   523,   524,   528,   529,   533,   534,   538
+       0,   228,   228,   229,   230,   231,   232,   233,   234,   235,
+     239,   240,   244,   245,   249,   250,   251,   252,   256,   260,
+     261,   262,   266,   267,   268,   272,   273,   274,   275,   276,
+     277,   278,   282,   340,   344,   345,   346,   347,   351,   355,
+     364,   377,   378,   379,   383,   384,   385,   386,   387,   388,
+     392,   393,   397,   401,   402,   403,   404,   405,   409,   410,
+     411,   415,   416,   420,   421,   425,   426,   430,   442,   457,
+     476,   491,   492,   496,   497,   501,   502,   506
 };
 #endif
 
@@ -1710,127 +1680,127 @@ yyreduce:
     {
         case 2:
 /* Line 1792 of yacc.c  */
-#line 258 "grammar.y"
+#line 228 "grammar.y"
     {buf[0]='\0';}
     break;
 
   case 3:
 /* Line 1792 of yacc.c  */
-#line 259 "grammar.y"
+#line 229 "grammar.y"
     {buf[0]='\0';}
     break;
 
   case 4:
 /* Line 1792 of yacc.c  */
-#line 260 "grammar.y"
+#line 230 "grammar.y"
     {buf[0]='\0';}
     break;
 
   case 5:
 /* Line 1792 of yacc.c  */
-#line 261 "grammar.y"
+#line 231 "grammar.y"
     {(yyval.val)=(yyvsp[(2) - (3)].val);}
     break;
 
   case 6:
 /* Line 1792 of yacc.c  */
-#line 262 "grammar.y"
+#line 232 "grammar.y"
     {is_in_fonctions((yyvsp[(1) - (3)].val).s, (yyval.val).s);}
     break;
 
   case 7:
 /* Line 1792 of yacc.c  */
-#line 263 "grammar.y"
+#line 233 "grammar.y"
     {is_in_fonctions_args((yyvsp[(1) - (4)].val).s, (yyvsp[(3) - (4)].val).s, (yyval.val).s);}
     break;
 
   case 11:
 /* Line 1792 of yacc.c  */
-#line 270 "grammar.y"
+#line 240 "grammar.y"
     {yyerror("Les tableaux ne sont pas geres");}
     break;
 
   case 13:
 /* Line 1792 of yacc.c  */
-#line 275 "grammar.y"
+#line 245 "grammar.y"
     {(yyval.val).type=(yyvsp[(3) - (3)].val).type;sprintf((yyval.val).s, "%s", (yyvsp[(1) - (3)].val).s); sprintf((yyval.val).s+strlen((yyval.val).s), "%s", (yyvsp[(3) - (3)].val).s);}
     break;
 
   case 17:
 /* Line 1792 of yacc.c  */
-#line 282 "grammar.y"
+#line 252 "grammar.y"
     {(yyval.val)=(yyvsp[(2) - (2)].val);}
     break;
 
   case 19:
 /* Line 1792 of yacc.c  */
-#line 290 "grammar.y"
+#line 260 "grammar.y"
     {(yyval.val).type=print_value((yyvsp[(1) - (1)].val), (yyval.val).s);}
     break;
 
   case 20:
 /* Line 1792 of yacc.c  */
-#line 291 "grammar.y"
+#line 261 "grammar.y"
     {(yyval.val).type=print_value((yyvsp[(3) - (3)].val), (yyvsp[(3) - (3)].val).s); struct val v; sprintf(v.s, "%s", (yyvsp[(3) - (3)].val).s); v.type = (yyval.val).type; (yyval.val).type=print_values((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val), "mul", (yyval.val).s);}
     break;
 
   case 21:
 /* Line 1792 of yacc.c  */
-#line 292 "grammar.y"
+#line 262 "grammar.y"
     {(yyval.val).type=print_value((yyvsp[(3) - (3)].val), (yyvsp[(3) - (3)].val).s); struct val v; sprintf(v.s, "%s", (yyvsp[(3) - (3)].val).s); v.type = (yyval.val).type; (yyval.val).type=print_values((yyvsp[(1) - (3)].val), v, "div", (yyval.val).s);}
     break;
 
   case 23:
 /* Line 1792 of yacc.c  */
-#line 297 "grammar.y"
+#line 267 "grammar.y"
     {(yyval.val).type=print_values((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val), "add", (yyval.val).s);}
     break;
 
   case 24:
 /* Line 1792 of yacc.c  */
-#line 298 "grammar.y"
+#line 268 "grammar.y"
     {(yyval.val).type=print_values((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val), "sub", (yyval.val).s);}
     break;
 
   case 26:
 /* Line 1792 of yacc.c  */
-#line 303 "grammar.y"
+#line 273 "grammar.y"
     {(yyval.val).type=compare((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val), (yyval.val).s, "ugt", "ogt");}
     break;
 
   case 27:
 /* Line 1792 of yacc.c  */
-#line 304 "grammar.y"
+#line 274 "grammar.y"
     {(yyval.val).type=compare((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val), (yyval.val).s, "ult", "olt");}
     break;
 
   case 28:
 /* Line 1792 of yacc.c  */
-#line 305 "grammar.y"
+#line 275 "grammar.y"
     {(yyval.val).type=compare((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val), (yyval.val).s, "ule", "ole");}
     break;
 
   case 29:
 /* Line 1792 of yacc.c  */
-#line 306 "grammar.y"
+#line 276 "grammar.y"
     {(yyval.val).type=compare((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val), (yyval.val).s, "uge", "oge");}
     break;
 
   case 30:
 /* Line 1792 of yacc.c  */
-#line 307 "grammar.y"
+#line 277 "grammar.y"
     {(yyval.val).type=compare((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val), (yyval.val).s, "ne",  "one");}
     break;
 
   case 31:
 /* Line 1792 of yacc.c  */
-#line 308 "grammar.y"
+#line 278 "grammar.y"
     {(yyval.val).type=compare((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val), (yyval.val).s, "eq",  "oeq");}
     break;
 
   case 32:
 /* Line 1792 of yacc.c  */
-#line 312 "grammar.y"
+#line 282 "grammar.y"
     {
   char *str1 = (yyvsp[(1) - (3)].val).s;
   char *str3 = (yyvsp[(3) - (3)].val).s;
@@ -1893,39 +1863,38 @@ yyreduce:
 
   case 34:
 /* Line 1792 of yacc.c  */
-#line 374 "grammar.y"
+#line 344 "grammar.y"
     {type_assignement[0]='\0';}
     break;
 
   case 35:
 /* Line 1792 of yacc.c  */
-#line 375 "grammar.y"
+#line 345 "grammar.y"
     {sprintf(type_assignement, "mul");}
     break;
 
   case 36:
 /* Line 1792 of yacc.c  */
-#line 376 "grammar.y"
+#line 346 "grammar.y"
     {sprintf(type_assignement, "add");}
     break;
 
   case 37:
 /* Line 1792 of yacc.c  */
-#line 377 "grammar.y"
+#line 347 "grammar.y"
     {sprintf(type_assignement, "sub");}
     break;
 
   case 38:
 /* Line 1792 of yacc.c  */
-#line 381 "grammar.y"
+#line 351 "grammar.y"
     {(yyval.val)=(yyvsp[(2) - (3)].val);}
     break;
 
   case 39:
 /* Line 1792 of yacc.c  */
-#line 385 "grammar.y"
-    {
-  sprintf(block_vars[nb_vars], "%s", (yyvsp[(1) - (1)].val).s); nb_vars++;
+#line 355 "grammar.y"
+    {sprintf(block_vars[nb_vars], "%s", (yyvsp[(1) - (1)].val).s); nb_vars++;
   int t = (strcmp(type_name, "i32") == 0)?V_INT:V_DOUBLE;
   char *str1 = (yyvsp[(1) - (1)].val).s;
   if(ht_exists(&hash_table_new, str1)){
@@ -1938,7 +1907,7 @@ yyreduce:
 
   case 40:
 /* Line 1792 of yacc.c  */
-#line 395 "grammar.y"
+#line 364 "grammar.y"
     {
   sprintf(block_vars[nb_vars], "%s", (yyvsp[(3) - (3)].val).s); nb_vars++;
   int t = (strcmp(type_name, "i32") == 0)?V_INT:V_DOUBLE;
@@ -1946,7 +1915,6 @@ yyreduce:
   if(ht_exists(&hash_table_new, str2)){
     //yyerror("Variable deja declare\n");
   }
-  
   ht_add(&hash_table_new, str2, str2, t);
   printf("@%s = common global %s 0\n", str2, type_name);
   }
@@ -1954,103 +1922,109 @@ yyreduce:
 
   case 41:
 /* Line 1792 of yacc.c  */
-#line 409 "grammar.y"
+#line 377 "grammar.y"
     {sprintf(type_name, "void");}
     break;
 
   case 42:
 /* Line 1792 of yacc.c  */
-#line 410 "grammar.y"
+#line 378 "grammar.y"
     {sprintf(type_name, "i32");}
     break;
 
   case 43:
 /* Line 1792 of yacc.c  */
-#line 411 "grammar.y"
+#line 379 "grammar.y"
     {sprintf(type_name, "double");}
     break;
 
   case 46:
 /* Line 1792 of yacc.c  */
-#line 417 "grammar.y"
+#line 385 "grammar.y"
     {yyerror("Les tableaux ne sont pas geres");}
     break;
 
   case 47:
 /* Line 1792 of yacc.c  */
-#line 418 "grammar.y"
+#line 386 "grammar.y"
     {yyerror("Les tableaux ne sont pas geres");}
+    break;
+
+  case 49:
+/* Line 1792 of yacc.c  */
+#line 388 "grammar.y"
+    {printf("declare %s @%s\n",types[(yyval.val).type],(yyvsp[(1) - (3)].val).s);}
     break;
 
   case 53:
 /* Line 1792 of yacc.c  */
-#line 433 "grammar.y"
+#line 401 "grammar.y"
     {char *str1 = (yyvsp[(1) - (1)].val).s; (yyval.val).type=(yyvsp[(1) - (1)].val).type; sprintf((yyval.val).s, "%s", str1);}
     break;
 
   case 54:
 /* Line 1792 of yacc.c  */
-#line 434 "grammar.y"
+#line 402 "grammar.y"
     {char *str1 = (yyvsp[(1) - (1)].val).s; (yyval.val).type=(yyvsp[(1) - (1)].val).type; sprintf((yyval.val).s, "%s", str1);}
     break;
 
   case 55:
 /* Line 1792 of yacc.c  */
-#line 435 "grammar.y"
+#line 403 "grammar.y"
     {char *str1 = (yyvsp[(1) - (1)].val).s; (yyval.val).type=(yyvsp[(1) - (1)].val).type; sprintf((yyval.val).s, "%s", str1);}
     break;
 
   case 56:
 /* Line 1792 of yacc.c  */
-#line 436 "grammar.y"
+#line 404 "grammar.y"
     {char *str1 = (yyvsp[(1) - (1)].val).s; (yyval.val).type=(yyvsp[(1) - (1)].val).type; sprintf((yyval.val).s, "%s", str1);}
     break;
 
   case 57:
 /* Line 1792 of yacc.c  */
-#line 437 "grammar.y"
+#line 405 "grammar.y"
     {char *str1 = (yyvsp[(1) - (1)].val).s; (yyval.val).type=(yyvsp[(1) - (1)].val).type; sprintf((yyval.val).s, "%s", str1);}
     break;
 
   case 59:
 /* Line 1792 of yacc.c  */
-#line 442 "grammar.y"
+#line 410 "grammar.y"
     {char *str2 = (yyvsp[(2) - (3)].val).s; (yyval.val).type=(yyvsp[(2) - (3)].val).type; sprintf((yyval.val).s, "%s", str2);}
     break;
 
   case 60:
 /* Line 1792 of yacc.c  */
-#line 443 "grammar.y"
+#line 411 "grammar.y"
     {rm_vars(); nb_vars=0;char *str3 = (yyvsp[(3) - (4)].val).s; sprintf((yyval.val).s, "%s", str3);}
     break;
 
   case 62:
 /* Line 1792 of yacc.c  */
-#line 448 "grammar.y"
+#line 416 "grammar.y"
     {nb_vars=0;}
     break;
 
   case 63:
 /* Line 1792 of yacc.c  */
-#line 452 "grammar.y"
+#line 420 "grammar.y"
     {char *str1 = (yyvsp[(1) - (1)].val).s; (yyval.val).type=(yyvsp[(1) - (1)].val).type; sprintf((yyval.val).s, "%s", str1);}
     break;
 
   case 64:
 /* Line 1792 of yacc.c  */
-#line 453 "grammar.y"
+#line 421 "grammar.y"
     {char *str2 = (yyvsp[(2) - (2)].val).s; sprintf((yyval.val).s+strlen((yyval.val).s), "%s", str2);}
     break;
 
   case 66:
 /* Line 1792 of yacc.c  */
-#line 458 "grammar.y"
+#line 426 "grammar.y"
     {char *str1 = (yyvsp[(1) - (2)].val).s; sprintf((yyval.val).s, "%s", str1);}
     break;
 
   case 67:
 /* Line 1792 of yacc.c  */
-#line 462 "grammar.y"
+#line 430 "grammar.y"
     {
   char *str3 = (yyvsp[(3) - (5)].val).s;
   char *str5 = (yyvsp[(5) - (5)].val).s;
@@ -2067,7 +2041,7 @@ yyreduce:
 
   case 68:
 /* Line 1792 of yacc.c  */
-#line 474 "grammar.y"
+#line 442 "grammar.y"
     {
   sprintf((yyval.val).s, "%s", (yyvsp[(3) - (7)].val).s);
   sprintf((yyval.val).s+strlen((yyval.val).s), "br i1 %%result%d, label %%label%d, label %%label%d\n\n", results-1, labels, labels+1);
@@ -2087,7 +2061,7 @@ yyreduce:
 
   case 69:
 /* Line 1792 of yacc.c  */
-#line 489 "grammar.y"
+#line 457 "grammar.y"
     {
   sprintf((yyval.val).s, "%s", (yyvsp[(3) - (7)].val).s);
   sprintf((yyval.val).s+strlen((yyval.val).s), "br label %%loop%d\n \nloop%d:\n", loops, loops);
@@ -2108,7 +2082,7 @@ yyreduce:
 
   case 70:
 /* Line 1792 of yacc.c  */
-#line 509 "grammar.y"
+#line 477 "grammar.y"
     {
   sprintf((yyval.val).s, "br label %%label%d\n \nlabel%d:\n", labels, labels);
   labels++;
@@ -2122,15 +2096,27 @@ yyreduce:
 }
     break;
 
+  case 71:
+/* Line 1792 of yacc.c  */
+#line 491 "grammar.y"
+    {printf("ret\n");}
+    break;
+
+  case 72:
+/* Line 1792 of yacc.c  */
+#line 492 "grammar.y"
+    {printf("ret\n");}
+    break;
+
   case 77:
 /* Line 1792 of yacc.c  */
-#line 538 "grammar.y"
-    {printf("%s\n", (yyvsp[(3) - (3)].val).s);}
+#line 506 "grammar.y"
+    {(yyvsp[(2) - (3)].val).type=type_name;printf("%s\n", (yyvsp[(3) - (3)].val).s);}
     break;
 
 
 /* Line 1792 of yacc.c  */
-#line 2134 "grammar.c"
+#line 2120 "grammar.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2362,7 +2348,7 @@ yyreturn:
 
 
 /* Line 2055 of yacc.c  */
-#line 541 "grammar.y"
+#line 509 "grammar.y"
 
 #include <stdio.h>
 #include <string.h>
@@ -2400,37 +2386,10 @@ int main (int argc, char *argv[]) {
     printf("; ModuleID = '%s'\ntarget datalayout = \"e-p:32:32-i64:64-v128:32:128-n32-S128\"\ntarget triple = \"asmjs-unknown-emscripten\"\n\n",argv[1]);
 
     ht_init(&hash_table_new);
-
-    /* Ajout des variables spéciales */
-    ht_add(&hash_table_new, "$steer" , "%steer",     V_DOUBLE|V_SPECIAL);
-    ht_add(&hash_table_new, "$accel" , "%accelCmd",  V_DOUBLE|V_SPECIAL);
-    ht_add(&hash_table_new, "$brake" , "%brakeCmd",  V_DOUBLE|V_SPECIAL);
-    ht_add(&hash_table_new, "$clutch", "%clutchCmd", V_DOUBLE|V_SPECIAL);
-    ht_add(&hash_table_new, "$gear"  , "%gear",      V_INT|V_SPECIAL);
-
-
-    /* Ajout des fonctions utilisables */
-    ht_add(&hash_table_new, "c",             "createCanvas",             V_DOUBLE);
-    ht_add(&hash_table_new, "toto",           "toto",           V_DOUBLE);
-    ht_add(&hash_table_new, "square",          "square",          V_DOUBLE);
-    ht_add(&hash_table_new, "mul_add",            "mul_add",            V_DOUBLE);
-    ht_add(&hash_table_new, "pos_to_start",           "pos_to_start",           V_DOUBLE);
-    ht_add(&hash_table_new, "track_seg_length",       "track_seg_length",       V_DOUBLE);
-    ht_add(&hash_table_new, "track_seg_width",        "track_seg_width",        V_DOUBLE);
-    ht_add(&hash_table_new, "track_seg_start_width",  "track_seg_start_width",  V_DOUBLE);
-    ht_add(&hash_table_new, "track_seg_end_width",    "track_seg_end_width",    V_DOUBLE);
-    ht_add(&hash_table_new, "track_seg_radius",       "track_seg_radius",       V_DOUBLE);
-    ht_add(&hash_table_new, "track_seg_right_radius", "track_seg_right_radius", V_DOUBLE);
-    ht_add(&hash_table_new, "track_seg_left_radius",  "track_seg_left_radius",  V_DOUBLE);
-    ht_add(&hash_table_new, "track_seg_arc",          "track_seg_arc",          V_DOUBLE);
-    ht_add(&hash_table_new, "car_angle",              "car_angle",              V_DOUBLE);
-    ht_add(&hash_table_new, "norm_pi_pi",             "norm_pi_pi",             V_DOUBLE); 
     
     yyin = input;
  
     yyparse ();
-
-    printf("%d\n",ht_exists(&hash_table_new,"toto"));
 
     fclose(input);
     return 0;

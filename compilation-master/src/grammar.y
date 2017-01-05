@@ -18,7 +18,7 @@
   const char* types[] = {"void", "i32", "double"};
 
   char type_assignement[4];
-  char type_name[5];
+  char type_name[6];
 
   int tmps = 0;		        /* pour les variables temporaires */
   int labels = 0; 		/* pour les boucles if */
@@ -39,21 +39,6 @@
     }
   }
 
-  char* fonctions[21]={
-    "c",             "declare void @createCanvas(i32,i32)"         , "no",
-    "b",           "@get_pos_to_right(%struct.tTrkLocPos* %pos)"        , "no",
-    "square",          "@get_pos_to_middle(%struct.tTrkLocPos* %pos)"       , "no",
-    "mul_add",            "@get_pos_to_left(%struct.tTrkLocPos* %pos)"         , "no",
-    "pos_to_start",           "@get_pos_to_start(%struct.tTrkLocPos* %pos)"        , "no",
-    "track_seg_length",       "@get_track_seg_length(%struct.trackSeg* %seg)"      , "no",
-    "track_seg_width",        "@get_track_seg_width(%struct.trackSeg* %seg)"       , "no",
-    "track_seg_start_width",  "@get_track_seg_start_width(%struct.trackSeg* %seg)" , "no",
-    "track_seg_end_width",    "@get_track_seg_end_width(%struct.trackSeg* %seg)"   , "no",
-    "track_seg_radius",       "@get_track_seg_radius(%struct.trackSeg* %seg)"      , "no",
-    "track_seg_right_radius", "@get_track_seg_right_radius(%struct.trackSeg* %seg)", "no",
-    "track_seg_left_radius",  "@get_track_seg_left_radius(%struct.trackSeg* %seg)" , "no",
-    "track_seg_arc",          "@get_track_seg_arc(%struct.trackSeg* %seg)"         , "no",
-    "car_angle",              "@get_car_yaw(%struct.CarElt* %car)"                 , "no",};
 
   char *fonctions_args[3]={
     "norm_pi_pi", "@norm_pi_pi(double", "no"};
@@ -62,25 +47,11 @@
   void is_in_fonctions(char *s, char *dest){
     char *str1 = s;
     char tst[100];
-    int i;
-    if (ht_exists(&hash_table_new,"toto"))
+    if (ht_exists(&hash_table_new,s))
       printf("exists\n");
     else
-      ht_add(&hash_table_new,s,s,V_DOUBLE);
-    /*for (i=0; i<13; i++){
-      if (strcmp(s, fonctions[3*i])==0){
-	if (strcmp(fonctions[3*i+2], "no")==0){
-	  printf("%%%s = alloca double\n", s);
-	  fonctions[3*i+2] = "ok";
-	}
-	sprintf(dest, "%s", str1);
-  	sprintf(buf, "%%d = call double %s\n", tmps, fonctions[3*i+1]);
-	strcpy(tst,fonctions[3*1+1]);
-  	sprintf(buf+strlen(buf), "store double %%d, double* @%s\n", tmps, str1);
-  	tmps++;
-  	return;
-      }
-      }*/
+      ht_add(&hash_table_new,s,s,V_FUNCTION);
+
     printf("declare %s @%s()\n", s, tst);
   }
 
@@ -90,19 +61,18 @@
     int i;
     for (i=0; i<1; i++){
       if (strcmp(str1, fonctions_args[3*i])==0){
-	if (strcmp(fonctions_args[3*i+2], "no")==0){
-	  printf("%%%s = alloca double\n", s1);
-	  fonctions_args[3*i+2] = "ok";
-	}
-	sprintf(buf, "%s", str2);
-  	sprintf(buf+strlen(buf), "%%var%d = call double %s %%var%d)\n", tmps, fonctions_args[3*i+1], tmps-1);
-  	sprintf(buf+strlen(buf), "store double %%var%d, double* @%s\n", tmps, str1);
-  	tmps++;
-  	return;
+    	if (strcmp(fonctions_args[3*i+2], "no")==0){
+    	  printf("%%%s = alloca double\n", s1);
+    	  fonctions_args[3*i+2] = "ok";
+    	}
+    	sprintf(buf, "%s", str2);
+    	sprintf(buf+strlen(buf), "%%var%d = call double %s %%var%d)\n", tmps, fonctions_args[3*i+1], tmps-1);
+    	sprintf(buf+strlen(buf), "store double %%var%d, double* @%s\n", tmps, str1);
+    	tmps++;
+    	return;
       }
     }
     printf("call @%s(%s)\n", s1, s2);
-    //yyerror("Fonction non declaree");
   }
 
   int print_values(struct val s1, struct val s2, char type_op[3], char *dst){
@@ -382,8 +352,7 @@ declaration
 ;
 
 declarator_list
-: declarator {
-  sprintf(block_vars[nb_vars], "%s", $1.s); nb_vars++;
+: declarator {sprintf(block_vars[nb_vars], "%s", $1.s); nb_vars++;
   int t = (strcmp(type_name, "i32") == 0)?V_INT:V_DOUBLE;
   char *str1 = $1.s;
   if(ht_exists(&hash_table_new, str1)){
@@ -399,7 +368,6 @@ declarator_list
   if(ht_exists(&hash_table_new, str2)){
     //yyerror("Variable deja declare\n");
   }
-  
   ht_add(&hash_table_new, str2, str2, t);
   printf("@%s = common global %s 0\n", str2, type_name);
   }
@@ -412,12 +380,12 @@ type_name
 ;
 
 declarator
-: IDENTIFIER 			/* declaration de fonctions */
+: IDENTIFIER 		       
 | '(' declarator ')'
 | declarator '[' CONSTANTI ']'       {yyerror("Les tableaux ne sont pas geres");}
 | declarator '[' ']'                 {yyerror("Les tableaux ne sont pas geres");}
 | declarator '(' parameter_list ')'  
-| declarator '(' ')'                 
+| declarator '(' ')'                 {printf("declare %s @%s\n",types[$$.type],$1.s)}
 ;
 
 parameter_list
@@ -520,8 +488,8 @@ iteration_statement
 ;
 
 jump_statement
-: RETURN ';'            //{yyerror("Les return ne sont pas geres");}
-| RETURN expression ';' //{yyerror("Les return ne sont pas geres");}
+: RETURN ';'           {printf("ret\n");}
+| RETURN expression ';' {printf("ret\n");}
 ;
 
 program
@@ -535,7 +503,7 @@ external_declaration
 ;
 
 function_definition
-: type_name declarator compound_statement  {printf("%s\n", $3.s);}
+: type_name declarator compound_statement  {$2.type=type_name;printf("%s\n", $3.s);}
 ;
 
 %%
@@ -575,37 +543,10 @@ int main (int argc, char *argv[]) {
     printf("; ModuleID = '%s'\ntarget datalayout = \"e-p:32:32-i64:64-v128:32:128-n32-S128\"\ntarget triple = \"asmjs-unknown-emscripten\"\n\n",argv[1]);
 
     ht_init(&hash_table_new);
-
-    /* Ajout des variables spéciales */
-    ht_add(&hash_table_new, "$steer" , "%steer",     V_DOUBLE|V_SPECIAL);
-    ht_add(&hash_table_new, "$accel" , "%accelCmd",  V_DOUBLE|V_SPECIAL);
-    ht_add(&hash_table_new, "$brake" , "%brakeCmd",  V_DOUBLE|V_SPECIAL);
-    ht_add(&hash_table_new, "$clutch", "%clutchCmd", V_DOUBLE|V_SPECIAL);
-    ht_add(&hash_table_new, "$gear"  , "%gear",      V_INT|V_SPECIAL);
-
-
-    /* /\* Ajout des fonctions utilisables *\/ */
-    /* ht_add(&hash_table_new, "c",             "createCanvas",             V_DOUBLE); */
-    /* ht_add(&hash_table_new, "toto",           "toto",           V_DOUBLE); */
-    /* ht_add(&hash_table_new, "square",          "square",          V_DOUBLE); */
-    /* ht_add(&hash_table_new, "mul_add",            "mul_add",            V_DOUBLE); */
-    /* ht_add(&hash_table_new, "pos_to_start",           "pos_to_start",           V_DOUBLE); */
-    /* ht_add(&hash_table_new, "track_seg_length",       "track_seg_length",       V_DOUBLE); */
-    /* ht_add(&hash_table_new, "track_seg_width",        "track_seg_width",        V_DOUBLE); */
-    /* ht_add(&hash_table_new, "track_seg_start_width",  "track_seg_start_width",  V_DOUBLE); */
-    /* ht_add(&hash_table_new, "track_seg_end_width",    "track_seg_end_width",    V_DOUBLE); */
-    /* ht_add(&hash_table_new, "track_seg_radius",       "track_seg_radius",       V_DOUBLE); */
-    /* ht_add(&hash_table_new, "track_seg_right_radius", "track_seg_right_radius", V_DOUBLE); */
-    /* ht_add(&hash_table_new, "track_seg_left_radius",  "track_seg_left_radius",  V_DOUBLE); */
-    /* ht_add(&hash_table_new, "track_seg_arc",          "track_seg_arc",          V_DOUBLE); */
-    /* ht_add(&hash_table_new, "car_angle",              "car_angle",              V_DOUBLE); */
-    /* ht_add(&hash_table_new, "norm_pi_pi",             "norm_pi_pi",             V_DOUBLE);  */
     
     yyin = input;
  
     yyparse ();
-
-    printf("%d\n",ht_exists(&hash_table_new,"toto"));
 
     fclose(input);
     return 0;
