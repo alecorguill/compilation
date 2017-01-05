@@ -21,7 +21,7 @@
   char type_assignement[4];
   char type_name[6];
 
-  int tmps = 0;		        /* pour les variables temporaires */
+  int tmps = 1;		        /* pour les variables temporaires */
   int labels = 0; 		/* pour les boucles if */
   int results = 0;		/* pour les tests avec un resultat binaire */
   int loops = 0;		/* pour les boucles for */
@@ -385,7 +385,7 @@ declarator
 | declarator '[' CONSTANTI ']'       {yyerror("Les tableaux ne sont pas geres");}
 | declarator '[' ']'                 {yyerror("Les tableaux ne sont pas geres");}
 | declarator '(' parameter_list ')'  
-| declarator '(' ')'                 {printf("declare %s @%s() {\n",types[$$.type],$1.s);}
+| declarator '(' ')'                 {printf("define %s @%s() {\n",types[$$.type],$1.s);}
 ;
 
 parameter_list

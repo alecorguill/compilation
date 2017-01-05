@@ -3,5 +3,5 @@ int main(){
   int j;
   int k;
   i = i*j+k;
-  k=i*3;
+  k=i*15;
 }
