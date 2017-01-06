@@ -35,4 +35,4 @@ grammar.c:grammar.y
 	$(LEX) -o $@ $^
 
 clean:
-	rm -f grammar.c scanner.c grammar.h *.o *~ parse
+	rm -f grammar.c scanner.c grammar.h *.o *~ parse grammar.dot

@@ -32,15 +32,14 @@
   int nb_vars;	        
 
 
-  void declare_function(char *s, char *dest){
-    char tst[100];
+  void declare_function(char *s, char *dst){
     if (ht_exists(&sym_table,s))
       printf("exists\n");
     else{
       ht_add(&sym_table,s,s,S_FUNCTION);
     }
 
-    printf("declare %s @%s()\n", s, tst);
+    printf("declare %s @%s()\n", s, dst);
   }
 
   void call_args_function(char *s1, char *s2, char *dest){
@@ -49,44 +48,6 @@
     if (ht_exists(&sym_table,s1))
       ht_add(&sym_table,s1,s1,S_FUNCTION);
     printf("call @%s(%s)\n", s1, s2);
-  }
-
-  int print_values(struct attr s1, struct attr s2, char type_op[3], char *dst){
-    char *str1 = s1.s;
-    char *str2 = s2.s;
-    struct Sym *v1 = ht_get(&sym_table, str1);
-    struct Sym *v2 = ht_get(&sym_table, str2);
-    int t1, t2;
-    
-    if(s1.type == 0){
-      t1 = sym_get_type(v1);
-    }
-    else
-      t1 = s1.type;
-
-    if(s2.type == 0){
-      t2 = sym_get_type(v2);
-    }
-    else
-      t2 = s2.type;
-    
-    sprintf(dst+strlen(dst), "%s", str2);
-
-    if (t1==1){	        
-      char type_operation[3];
-      if (strcmp("div", type_op)==0)
-	sprintf(type_operation, "sdiv");
-      else
-	sprintf(type_operation, "%s", type_op);
-      sprintf(dst+strlen(dst), "r%d = %s i32 r%d, r%d\n", tmps, type_operation, tmps-2, tmps-1);
-    }
-
-    else{	        
-      sprintf(dst+strlen(dst), "r%d = %s double r%d, r%d\n", tmps, type_op, tmps-2, tmps-1);
-    }
-
-    tmps+=1;
-    return t1;
   }
 
  int print_value(struct attr s1, char *dst){
@@ -100,7 +61,7 @@
 
 
       if (sym_is_special(v) && !sym_get_llvm_name(v)){
-	/*sprintf(dst+strlen(dst),*/printf("r%d = load %s* @%s\n", tmps, types[s1.type], sym_get_llvm_name(v));
+        printf("r%d = load %s* @%s\n", tmps, types[s1.type], sym_get_llvm_name(v));
 	printf("%s\n",dst);
       }
       else if (!sym_is_special(v) && !sym_get_name(v)){
@@ -201,14 +162,14 @@ unary_operator
 
 multiplicative_expression
 : unary_expression {$$.type=print_value($1, $$.s);$$.reg=tmps-1;}
-| multiplicative_expression '*' unary_expression {$$.type=print_value($3, $3.s);printf("r%d = mul nsw %s r%d, r%d\n",tmps-1,types[$1.type],$1.reg,$3.reg);}//$$.type=print_values($1, $3, "mul", $$.s);}
-| multiplicative_expression '/' unary_expression {$$.type=print_value($3, $3.s); struct attr v; sprintf(v.s, "%s", $3.s); v.type = $$.type; $$.type=print_values($1, v, "div", $$.s);}
+| multiplicative_expression '*' unary_expression {$$.type=print_value($3, $3.s);printf("r%d = mul nsw %s r%d, r%d\n",tmps-1,types[$1.type],$1.reg,$3.reg);}
+| multiplicative_expression '/' unary_expression {$$.type=print_value($3, $3.s); struct attr v; sprintf(v.s, "%s", $3.s); v.type = $$.type; }
 ;
 
 additive_expression
 : multiplicative_expression
 | additive_expression '+' multiplicative_expression {printf("r%d = add nsw %s r%d, r%d\n", tmps,types[$1.type],$1.reg,$3.reg);tmps++;}
-| additive_expression '-' multiplicative_expression {$$.type=print_values($1, $3, "sub", $$.s);}
+| additive_expression '-' multiplicative_expression {printf("r%d = add nsw %s r%d, -r%d\n", tmps,types[$1.type],$1.reg,$3.reg);tmps++;}
 ;
 
 comparison_expression
