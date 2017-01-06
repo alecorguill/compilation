@@ -2,16 +2,26 @@
 YACC=bison
 CFLAGS=-Wall -g
 CC=gcc
+TSTGEN=test/test_gen/*
 
 all:parse
 
-parse:grammar.c scanner.c def.o sym.o hash_table.o
+testgen:
+	for file in $(TSTGEN) ; do\
+		echo "=================================================";\
+		echo"";\
+		echo "Génération de $$file";\
+		echo"";\
+		./parse $$file ;\
+		echo"";\
+	echo "=================================================";\
+	done
+
+
+parse:grammar.c scanner.c sym.o hash_table.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-def.o: def.c
-	$(CC) $(CFLAGS) -c $^ -o  def.o
-
-hash_table.o: variable.o hash_table.c
+hash_table.o: sym.o hash_table.c
 	$(CC) $(CFLAGS) -c $^ -o  hash_table.o
 
 sym.o: sym.c
@@ -25,4 +35,4 @@ grammar.c:grammar.y
 	$(LEX) -o $@ $^
 
 clean:
-	rm -f grammar.c grammar.dot scanner.c grammar.h *.o *~ parse
+	rm -f grammar.c scanner.c grammar.h *.o *~ parse

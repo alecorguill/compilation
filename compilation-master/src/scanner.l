@@ -20,12 +20,12 @@ L[a-zA-Z_]
 "void"		{ count(); return(VOID); }
 "while"		{ count(); return(WHILE); }
 "for"		{ count(); return(FOR); }
-[$]?{L}({L}|{D})*	{ count(); sprintf(yylval.val.s,yytext); yylval.val.type=0; return(IDENTIFIER); }
-{D}+    	{ count(); sprintf(yylval.val.s,yytext); yylval.val.type=1; return(CONSTANTI); }
-{D}+"."{D}*     { count(); sprintf(yylval.val.s,yytext); yylval.val.type=2; return(CONSTANTF); }
-"+="		{ count(); sprintf(yylval.val.s,yytext); yylval.val.type=0; return(ADD_ASSIGN); }
-"-="		{ count(); sprintf(yylval.val.s,yytext); yylval.val.type=0; return(SUB_ASSIGN); }
-"*="		{ count(); sprintf(yylval.val.s,yytext); yylval.val.type=0; return(MUL_ASSIGN); }
+[$]?{L}({L}|{D})*	{ count(); sprintf(yylval.attr.s,yytext); yylval.attr.type=0; return(IDENTIFIER); }
+{D}+    	{ count(); sprintf(yylval.attr.s,yytext); yylval.attr.type=1; return(CONSTANTI); }
+{D}+"."{D}*     { count(); sprintf(yylval.attr.s,yytext); yylval.attr.type=2; return(CONSTANTF); }
+"+="		{ count(); sprintf(yylval.attr.s,yytext); yylval.attr.type=0; return(ADD_ASSIGN); }
+"-="		{ count(); sprintf(yylval.attr.s,yytext); yylval.attr.type=0; return(SUB_ASSIGN); }
+"*="		{ count(); sprintf(yylval.attr.s,yytext); yylval.attr.type=0; return(MUL_ASSIGN); }
 "++"		{ count(); return(INC_OP); }
 "--"		{ count(); return(DEC_OP); }
 "<="		{ count(); return(LE_OP); }

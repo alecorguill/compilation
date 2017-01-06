@@ -1,16 +1,15 @@
 %union{
-  struct val{
+  struct attr{
     int type;
     char s[40000];
     int reg;
-  }val;
+  }attr;
  };
 
 %{
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "def.h"
 #include "sym.h"
 #include "hash_table.h"
 
@@ -22,19 +21,18 @@
   char type_name[6];
   int depth = 0;
 
-  int tmps = 1;		        /* pour les variables temporaires */
-  int labels = 0; 		/* pour les boucles if */
-  int results = 0;		/* pour les tests avec un resultat binaire */
-  int loops = 0;		/* pour les boucles for */
+  int tmps = 1;		     
+  int labels = 0;       
+  int results = 0;
+  int loops = 0;
 
-  char buf[1024];		/* pour appeler une fonction */
+  char buf[1024];     
 
-  char block_vars[100][1024]; 	/* variables utilisées dans un block */
-  int nb_vars;			/* nombre de variables par block */
+  char block_vars[100][1024]; 
+  int nb_vars;	        
 
 
   void declare_function(char *s, char *dest){
-    char *str1 = s;
     char tst[100];
     if (ht_exists(&sym_table,s))
       printf("exists\n");
@@ -53,7 +51,7 @@
     printf("call @%s(%s)\n", s1, s2);
   }
 
-  int print_values(struct val s1, struct val s2, char type_op[3], char *dst){
+  int print_values(struct attr s1, struct attr s2, char type_op[3], char *dst){
     char *str1 = s1.s;
     char *str2 = s2.s;
     struct Sym *v1 = ht_get(&sym_table, str1);
@@ -71,13 +69,10 @@
     }
     else
       t2 = s2.type;
-
-    if(t1!=t2)
-      //yyerror("Operations entre des entites de type different");
     
     sprintf(dst+strlen(dst), "%s", str2);
 
-    if (t1==1){			/* int */
+    if (t1==1){	        
       char type_operation[3];
       if (strcmp("div", type_op)==0)
 	sprintf(type_operation, "sdiv");
@@ -86,7 +81,7 @@
       sprintf(dst+strlen(dst), "r%d = %s i32 r%d, r%d\n", tmps, type_operation, tmps-2, tmps-1);
     }
 
-    else{			/* double */
+    else{	        
       sprintf(dst+strlen(dst), "r%d = %s double r%d, r%d\n", tmps, type_op, tmps-2, tmps-1);
     }
 
@@ -94,7 +89,7 @@
     return t1;
   }
 
- int print_value(struct val s1, char *dst){
+ int print_value(struct attr s1, char *dst){
     memset(dst,0,sizeof(dst));
     struct Sym *v = NULL;
     if(s1.type == 0){
@@ -105,11 +100,11 @@
 
 
       if (sym_is_special(v) && !sym_get_llvm_name(v)){
-	sprintf(dst+strlen(dst), "r%d = load %s* @%s\n", tmps, types[s1.type], sym_get_llvm_name(v));
+	/*sprintf(dst+strlen(dst),*/printf("r%d = load %s* @%s\n", tmps, types[s1.type], sym_get_llvm_name(v));
 	printf("%s\n",dst);
       }
       else if (!sym_is_special(v) && !sym_get_name(v)){
-	sprintf(dst+strlen(dst), "r%d = load %s* @%s\n", tmps, types[s1.type], sym_get_name(v));
+        printf("r%d = load %s* @%s\n", tmps, types[s1.type], sym_get_name(v));
 	printf("%s\n",dst);
       }
       tmps++;
@@ -118,9 +113,9 @@
     
     else if (s1.type != 0) {
       sprintf(dst, "\n%s", buf);
-      if (s1.type==1)		/* int */
+      if (s1.type==1)   
 	sprintf(dst+strlen(dst), "r%d = add i32 0, %s\n", tmps, s1.s);
-      else			/* double */
+      else	        
 	sprintf(dst+strlen(dst), "r%d = add double 0.0, %s\n", tmps, s1.s);
       tmps++;
       return s1.type;
@@ -128,7 +123,7 @@
     return -1;
   }
 
-  int compare(struct val s1, struct val s2, char *dest, char int_comparison[3], char double_comparison[3]){
+  int compare(struct attr s1, struct attr s2, char *dest, char int_comparison[3], char double_comparison[3]){
     char *str1 = s1.s;
     char *str2 = s2.s;
     char c='i';
@@ -153,21 +148,21 @@
   void print_struct_definition();
 %}
 
-%token <val> IDENTIFIER CONSTANTF CONSTANTI
-%token <val> INC_OP DEC_OP LE_OP GE_OP EQ_OP NE_OP
-%token <val> SUB_ASSIGN MUL_ASSIGN ADD_ASSIGN
-%token <val> TYPE_NAME
-%token <val> INT DOUBLE VOID
-%token <val> IF ELSE WHILE RETURN FOR
+%token <attr> IDENTIFIER CONSTANTF CONSTANTI
+%token <attr> INC_OP DEC_OP LE_OP GE_OP EQ_OP NE_OP
+%token <attr> SUB_ASSIGN MUL_ASSIGN ADD_ASSIGN
+%token <attr> TYPE_NAME
+%token <attr> INT DOUBLE VOID
+%token <attr> IF ELSE WHILE RETURN FOR
 %start program
 
-%type <val> primary_expression comparison_expression additive_expression multiplicative_expression unary_expression argument_expression_list postfix_expression expression
+%type <attr> primary_expression comparison_expression additive_expression multiplicative_expression unary_expression argument_expression_list postfix_expression expression
 
-%type <val> assignment_operator declaration type_name declarator parameter_declaration program external_declaration function_definition
+%type <attr> assignment_operator declaration type_name declarator parameter_declaration program external_declaration function_definition
 
-%type <val> declarator_list parameter_list declaration_list statement_list
+%type <attr> declarator_list parameter_list declaration_list statement_list
 
-%type <val> statement compound_statement expression_statement selection_statement iteration_statement jump_statement
+%type <attr> statement compound_statement expression_statement selection_statement iteration_statement jump_statement
 
 %%
 
@@ -179,8 +174,8 @@ primary_expression
 | '(' expression ')' {$$=$2;}
 | IDENTIFIER '(' ')' {declare_function($1.s, $$.s);}
 | IDENTIFIER '(' argument_expression_list ')' {call_args_function($1.s, $3.s, $$.s);}
-| IDENTIFIER INC_OP  //{yyerror("Le ++ n'est pas gere");}
-| IDENTIFIER DEC_OP  //{yyerror("Le -- n'est pas gere");}
+| IDENTIFIER INC_OP 
+| IDENTIFIER DEC_OP 
 ;
 
 postfix_expression
@@ -207,12 +202,12 @@ unary_operator
 multiplicative_expression
 : unary_expression {$$.type=print_value($1, $$.s);$$.reg=tmps-1;}
 | multiplicative_expression '*' unary_expression {$$.type=print_value($3, $3.s);printf("r%d = mul nsw %s r%d, r%d\n",tmps-1,types[$1.type],$1.reg,$3.reg);}//$$.type=print_values($1, $3, "mul", $$.s);}
-| multiplicative_expression '/' unary_expression {$$.type=print_value($3, $3.s); struct val v; sprintf(v.s, "%s", $3.s); v.type = $$.type; $$.type=print_values($1, v, "div", $$.s);}
+| multiplicative_expression '/' unary_expression {$$.type=print_value($3, $3.s); struct attr v; sprintf(v.s, "%s", $3.s); v.type = $$.type; $$.type=print_values($1, v, "div", $$.s);}
 ;
 
 additive_expression
 : multiplicative_expression
-| additive_expression '+' multiplicative_expression {printf("r%d = add nsw %s r%d, r%d\n", tmps,types[$1.type],$1.reg,$3.reg);tmps++;}//$$.type=print_values($1, $3, "add", $$.s);}
+| additive_expression '+' multiplicative_expression {printf("r%d = add nsw %s r%d, r%d\n", tmps,types[$1.type],$1.reg,$3.reg);tmps++;}
 | additive_expression '-' multiplicative_expression {$$.type=print_values($1, $3, "sub", $$.s);}
 ;
 
@@ -239,12 +234,8 @@ expression
   
   if (sym_is_declared(v)){
     t1 = sym_get_type(v);
-  }/*
-  else
-  yyerror("Affectation dans une variable non declaree");*/
-    
+  }
   if (t1!=t2)
-    //yyerror("Affectation dans une variable de type different");
     printf("%s", str3);
 
   if(strlen(type_assignement)>0){
@@ -263,24 +254,22 @@ expression
     }
     sprintf($$.s+strlen($$.s), "r%d = %c%s %s r%d, r%d\n", tmps+1, assign, type_assignement, a_type, tmps-1, tmps);
   }
-  if (t1==1){ 			/* int */
-    //int nb = sym_get_value(v);
+  if (t1==1){
     if (sym_is_special(v)){
-      /*sprintf($$.s+strlen($$.s),*/printf("store i32 r%d, i32* @%s\n", tmps-1, sym_get_llvm_name(v));
+      printf("store i32 r%d, i32* @%s\n", tmps-1, sym_get_llvm_name(v));
       sym_set_modified(v, S_MODIFIED);
     }
     else{
-      //memset($3.s,0,16);
-      /*sprintf($$.s+strlen($$.s),*/printf("%sstore i32 r%d, i32* @%s\n",$3.s, tmps-1, sym_get_llvm_name(v));
+      printf("%sstore i32 r%d, i32* @%s\n",$3.s, tmps-1, sym_get_llvm_name(v));
     }
   }
-  else{				/* double */
+  else{	        
     if (sym_is_special(v)){
       sym_set_modified(v, S_MODIFIED);
-      /*sprintf($$.s+strlen($$.s),*/printf("store double r%d, double* @%s\n", tmps-1, sym_get_llvm_name(v));
+      printf("store double r%d, double* @%s\n", tmps-1, sym_get_llvm_name(v));
     }
     else
-      /*sprintf($$.s+strlen($$.s),*/printf("store double r%d, double* @%s\n", tmps-1, sym_get_llvm_name(v));
+      printf("store double r%d, double* @%s\n", tmps-1, sym_get_llvm_name(v));
   }
 
   if(strlen(type_assignement)>0){
@@ -344,7 +333,7 @@ declarator
 ;
 
 parameter_list
-: parameter_declaration		/* parametres de la fonction declaree */
+: parameter_declaration 
 | parameter_list ',' parameter_declaration
 ;
 
@@ -358,7 +347,7 @@ statement
 | selection_statement  {$$.type=$1.type; strcpy($$.s,$1.s);}
 | iteration_statement  {$$.type=$1.type; strcpy($$.s,$1.s);}
 | jump_statement       {$$.type=$1.type; strcpy($$.s,$1.s);}
-; //{char *str1 = $1.s; $$.type=$1.type; sprintf($$.s, "%s", str1);}
+;
 
 LB : '{'
 {
@@ -405,7 +394,6 @@ selection_statement
   sprintf($$.s+strlen($$.s), "br i1 r%d, label %d, label %d\n\n", tmps+1, labels, labels+1);
   sprintf($$.s+strlen($$.s), "; <label>%d:\n", labels);
   labels++;
-  /* expr */
   sprintf($$.s+strlen($$.s), "%s\n", str5);
   sprintf($$.s+strlen($$.s), "br label %d\n \n; <label>%d:\n", labels, labels);
   labels++;
@@ -416,32 +404,26 @@ selection_statement
   sprintf($$.s+strlen($$.s), "br i1 r%d, label %d, label %d\n\n", tmps+1, labels, labels+1);
   sprintf($$.s+strlen($$.s), "; <label>%d:\n", labels);
   labels++;
-  /* expr */
   sprintf($$.s+strlen($$.s), "%s\n", $5.s);
   sprintf($$.s+strlen($$.s), "br label %d\n", labels+2);
   sprintf($$.s+strlen($$.s), "; <label>%d:\n", labels);
   labels++;
-  /* expr */
   sprintf($$.s+strlen($$.s), "%s\n", $7.s);
   sprintf($$.s+strlen($$.s), "br label %d\n \n; <label>%d:\n\n", labels+1, labels+1);
   labels++;
   tmps++;
   }
 | FOR '(' expression_statement expression_statement expression ')' statement {
-  printf("COUCOUCOUC\n");
-  sprintf($$.s, "%s", $3.s);
-  sprintf($$.s+strlen($$.s), "br label %d\n \n; <label>:%d\n", loops, loops);
+  sprintf($$.s,"%s", $3.s);
+  sprintf($$.s+strlen($$.s), "br label %d\n \n; <label>%d:\n", loops, loops);
   loops++;
   sprintf($$.s+strlen($$.s), "%s", $4.s);
   sprintf($$.s+strlen($$.s), "br i1 r%d, label %d, label %d\n\n", tmps+1, loops, loops+1);
-  sprintf($$.s+strlen($$.s), "; <label>:%d\n", loops);
-  /* i=i+1 */
+  sprintf($$.s+strlen($$.s), "; <label>%d:\n", loops);
   sprintf($$.s+strlen($$.s), "%s", $5.s);
-  /* contenu boucle */
   sprintf($$.s+strlen($$.s), "%s", $7.s);
-  /* on revient au début de la boucle */
   sprintf($$.s+strlen($$.s), "br label %d\n", loops-1);
-  sprintf($$.s+strlen($$.s), "; <label>:%d\n;;", loops+1);
+  sprintf($$.s+strlen($$.s), "; <label>%d:\n;;", loops+1);
  loops++;
  tmps++;
   }
@@ -453,18 +435,18 @@ iteration_statement
   sprintf($$.s, "br label %d\n \n; <label>%d:\n", labels, labels);
   labels++;
   sprintf($$.s+strlen($$.s), "%s", $3.s);
-  sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %d, label %d\n", results-1, loops, loops+1);
-  sprintf($$.s+strlen($$.s), "\n; <label>:%d\n", loops);
+  sprintf($$.s+strlen($$.s), "br i1 r%d, label %d, label %d\n", tmps-1, loops, loops+1);
+  sprintf($$.s+strlen($$.s), "\n; <label>%d:\n", loops);
   sprintf($$.s+strlen($$.s), "%s", $5.s);
-  sprintf($$.s+strlen($$.s), "br label %d\n \n; <label>:%d\n;;", labels-1, loops+1);
+  sprintf($$.s+strlen($$.s), "br label %d\n \n; <label>%d:\n;;", labels-1, loops+1);
   loops+=2;
   labels++;
 }
 ;
 
 jump_statement
-: RETURN ';'           {printf("ret\n");}
-| RETURN expression ';' {printf("ret\n");}
+: RETURN ';'           {printf("ret");}
+| RETURN expression ';' {printf("ret %s",$2.s);memset($$.s,0,sizeof($$.s));}
 ;
 
 program
@@ -508,7 +490,6 @@ int main (int argc, char *argv[]) {
     }
     
     input = fopen (argv[1], "r");
-    /* file_name = strdup (argv[1]); */
 
     if (!input){
       fprintf (stderr, "%s: Could not open %s\n", *argv, argv[1]);
