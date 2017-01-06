@@ -1,4 +1,0 @@
-
-all:
-	echo "make test pour tout tester"
-	echo "make comportement pour tester ce comportement"
