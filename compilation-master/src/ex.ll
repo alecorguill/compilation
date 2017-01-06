@@ -1,171 +1,163 @@
-; ModuleID = 'ex.o'
-target datalayout = "e-p:32:32-i64:64-v128:32:128-n32-S128"
-target triple = "asmjs-unknown-emscripten"
+; ModuleID = 'ex.c'
+target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128"
+target triple = "x86_64-redhat-linux-gnu"
 
-@w = common global float 0.000000e+00
-@h = common global float 0.000000e+00
-@angle = common global float 0.000000e+00
-@angle_dir = common global i32 0
-@N = common global i32 0
+@w = common global double 0.000000e+00, align 8
+@h = common global double 0.000000e+00, align 8
+@angle = common global double 0.000000e+00, align 8
+@angle_dir = common global i32 0, align 4
+@N = common global i32 0, align 4
 
-declare void @background(i32)
-
-declare void @fill(i32)
-
-declare void @stroke(i32)
-
-declare void @ellipse(i32, i32, i32, i32)
-
-; Function Attrs: nounwind readnone
-declare float @sinf(float)
-
-; Function Attrs: nounwind readnone
-declare float @cosf(float)
-
-
-; Function Attrs: nounwind
-define void @my_setup() {
-  store float 6.400000e+02, float* @w
-  store float 4.800000e+02, float* @h
-  store float 0.000000e+00, float* @angle
-  store i32 0, i32* @angle_dir
-  store i32 200, i32* @N
-  %1 = load float, float* @w
-  %2 = fptosi float %1 to i32
-  %3 = load float, float* @h
-  %4 = fptosi float %3 to i32
-  call void @createCanvas(i32 %2, i32 %4)
+; Function Attrs: nounwind uwtable
+define void @my_setup() #0 {
+  store double 6.400000e+02, double* @w, align 8
+  store double 4.800000e+02, double* @h, align 8
+  store double 0.000000e+00, double* @angle, align 8
+  store i32 0, i32* @angle_dir, align 4
+  store i32 200, i32* @N, align 4
+  %1 = load double* @w, align 8
+  %2 = load double* @h, align 8
+  %3 = call i32 (double, double, ...)* bitcast (i32 (...)* @createCanvas to i32 (double, double, ...)*)(double %1, double %2)
   ret void
 }
 
-declare void @createCanvas(i32, i32)
+declare i32 @createCanvas(...) #1
 
-; Function Attrs: nounwind
-define void @my_draw() {
-  %1 = alloca i32
-  %2 = alloca float
-  call void @background(i32 0)
-  store i32 0, i32* %1
-  br label %3
+; Function Attrs: nounwind uwtable
+define void @my_draw() #0 {
+  %i = alloca i32, align 4
+  %r = alloca double, align 8
+  %1 = call i32 (i32, ...)* bitcast (i32 (...)* @background to i32 (i32, ...)*)(i32 0)
+  store i32 0, i32* %i, align 4
+  br label %2
 
-; <label>:3:                                      ; preds = %60, %0
-  %4 = load i32, i32* %1
-  %5 = load i32, i32* @N
-  %6 = icmp slt i32 %4, %5
-  br i1 %6, label %7, label %63
+; <label>:2                                       ; preds = %52, %0
+  %3 = load i32* %i, align 4
+  %4 = load i32* @N, align 4
+  %5 = icmp slt i32 %3, %4
+  br i1 %5, label %6, label %55
 
-; <label>:7:                                      ; preds = %3
-  %8 = load i32, i32* %1
-  %9 = sitofp i32 %8 to double
-  %10 = fmul double 2.550000e+02, %9
-  %11 = load i32, i32* @N
-  %12 = sitofp i32 %11 to double
-  %13 = fdiv double %10, %12
-  %14 = fptosi double %13 to i32
-  call void @fill(i32 %14)
-  %15 = load i32, i32* @N
-  %16 = load i32, i32* %1
-  %17 = sub nsw i32 %15, %16
-  %18 = sitofp i32 %17 to double
-  %19 = fmul double 2.550000e+02, %18
-  %20 = load i32, i32* @N
-  %21 = sitofp i32 %20 to double
-  %22 = fdiv double %19, %21
-  %23 = fptosi double %22 to i32
-  call void @stroke(i32 %23)
-  %24 = load i32, i32* %1
-  %25 = sitofp i32 %24 to float
-  %26 = load float, float* @angle
-  %27 = fadd float %25, %26
-  store float %27, float* %2
-  %28 = load float, float* @w
-  %29 = fpext float %28 to double
-  %30 = fdiv double %29, 2.000000e+00
-  %31 = load i32, i32* %1
-  %32 = sitofp i32 %31 to float
-  %33 = load float, float* %2
-  %34 = call float @sinf(float %33)
-  %35 = fmul float %32, %34
-  %36 = fpext float %35 to double
-  %37 = fadd double %30, %36
-  %38 = fptosi double %37 to i32
-  %39 = load float, float* @h
-  %40 = fpext float %39 to double
-  %41 = fdiv double %40, 2.000000e+00
-  %42 = load i32, i32* %1
-  %43 = sitofp i32 %42 to float
-  %44 = load float, float* %2
-  %45 = call float @cosf(float %44)
-  %46 = fmul float %43, %45
-  %47 = fpext float %46 to double
-  %48 = fadd double %41, %47
-  %49 = fptosi double %48 to i32
-  %50 = load i32, i32* %1
-  %51 = sitofp i32 %50 to float
-  %52 = load float, float* @angle
-  %53 = fmul float %51, %52
-  %54 = fptosi float %53 to i32
-  %55 = load i32, i32* %1
-  %56 = sitofp i32 %55 to float
-  %57 = load float, float* @angle
-  %58 = fmul float %56, %57
-  %59 = fptosi float %58 to i32
-  call void @ellipse(i32 %38, i32 %49, i32 %54, i32 %59)
-  br label %60
+; <label>:6                                       ; preds = %2
+  %7 = load i32* %i, align 4
+  %8 = sitofp i32 %7 to double
+  %9 = fmul double 2.550000e+02, %8
+  %10 = load i32* @N, align 4
+  %11 = sitofp i32 %10 to double
+  %12 = fdiv double %9, %11
+  %13 = call i32 (double, ...)* bitcast (i32 (...)* @fill to i32 (double, ...)*)(double %12)
+  %14 = load i32* @N, align 4
+  %15 = load i32* %i, align 4
+  %16 = sub nsw i32 %14, %15
+  %17 = sitofp i32 %16 to double
+  %18 = fmul double 2.550000e+02, %17
+  %19 = load i32* @N, align 4
+  %20 = sitofp i32 %19 to double
+  %21 = fdiv double %18, %20
+  %22 = call i32 (double, ...)* bitcast (i32 (...)* @stroke to i32 (double, ...)*)(double %21)
+  %23 = load i32* %i, align 4
+  %24 = sitofp i32 %23 to double
+  %25 = load double* @angle, align 8
+  %26 = fadd double %24, %25
+  store double %26, double* %r, align 8
+  %27 = load double* @w, align 8
+  %28 = fdiv double %27, 2.000000e+00
+  %29 = load i32* %i, align 4
+  %30 = sitofp i32 %29 to double
+  %31 = load double* %r, align 8
+  %32 = call double @sin(double %31) #3
+  %33 = fmul double %30, %32
+  %34 = fadd double %28, %33
+  %35 = load double* @h, align 8
+  %36 = fdiv double %35, 2.000000e+00
+  %37 = load i32* %i, align 4
+  %38 = sitofp i32 %37 to double
+  %39 = load double* %r, align 8
+  %40 = call double @cos(double %39) #3
+  %41 = fmul double %38, %40
+  %42 = fadd double %36, %41
+  %43 = load i32* %i, align 4
+  %44 = sitofp i32 %43 to double
+  %45 = load double* @angle, align 8
+  %46 = fmul double %44, %45
+  %47 = load i32* %i, align 4
+  %48 = sitofp i32 %47 to double
+  %49 = load double* @angle, align 8
+  %50 = fmul double %48, %49
+  %51 = call i32 (double, double, double, double, ...)* bitcast (i32 (...)* @ellipse to i32 (double, double, double, double, ...)*)(double %34, double %42, double %46, double %50)
+  br label %52
 
-; <label>:60:                                     ; preds = %7
-  %61 = load i32, i32* %1
-  %62 = add nsw i32 %61, 1
-  store i32 %62, i32* %1
-  br label %3
+; <label>:52                                      ; preds = %6
+  %53 = load i32* %i, align 4
+  %54 = add nsw i32 %53, 1
+  store i32 %54, i32* %i, align 4
+  br label %2
 
-; <label>:63:                                     ; preds = %3
-  %64 = load i32, i32* @angle_dir
-  %65 = icmp eq i32 %64, 0
-  br i1 %65, label %66, label %75
+; <label>:55                                      ; preds = %2
+  %56 = load i32* @angle_dir, align 4
+  %57 = icmp eq i32 %56, 0
+  br i1 %57, label %58, label %65
 
-; <label>:66:                                     ; preds = %63
-  %67 = load float, float* @angle
-  %68 = fpext float %67 to double
-  %69 = fadd double %68, 1.000000e-02
-  %70 = fptrunc double %69 to float
-  store float %70, float* @angle
-  %71 = load float, float* @angle
-  %72 = fcmp ogt float %71, 2.000000e+00
+; <label>:58                                      ; preds = %55
+  %59 = load double* @angle, align 8
+  %60 = fadd double %59, 1.000000e-02
+  store double %60, double* @angle, align 8
+  %61 = load double* @angle, align 8
+  %62 = fcmp ogt double %61, 2.000000e+00
+  br i1 %62, label %63, label %64
+
+; <label>:63                                      ; preds = %58
+  store i32 1, i32* @angle_dir, align 4
+  br label %64
+
+; <label>:64                                      ; preds = %63, %58
+  br label %76
+
+; <label>:65                                      ; preds = %55
+  %66 = load i32* @angle_dir, align 4
+  %67 = icmp eq i32 %66, 1
+  br i1 %67, label %68, label %75
+
+; <label>:68                                      ; preds = %65
+  %69 = load double* @angle, align 8
+  %70 = fsub double %69, 1.000000e-02
+  store double %70, double* @angle, align 8
+  %71 = load double* @angle, align 8
+  %72 = fcmp olt double %71, -2.000000e+00
   br i1 %72, label %73, label %74
 
-; <label>:73:                                     ; preds = %66
-  store i32 1, i32* @angle_dir
+; <label>:73                                      ; preds = %68
+  store i32 0, i32* @angle_dir, align 4
   br label %74
 
-; <label>:74:                                     ; preds = %73, %66
-  br label %88
+; <label>:74                                      ; preds = %73, %68
+  br label %75
 
-; <label>:75:                                     ; preds = %63
-  %76 = load i32, i32* @angle_dir
-  %77 = icmp eq i32 %76, 1
-  br i1 %77, label %78, label %87
+; <label>:75                                      ; preds = %74, %65
+  br label %76
 
-; <label>:78:                                     ; preds = %75
-  %79 = load float, float* @angle
-  %80 = fpext float %79 to double
-  %81 = fsub double %80, 1.000000e-02
-  %82 = fptrunc double %81 to float
-  store float %82, float* @angle
-  %83 = load float, float* @angle
-  %84 = fcmp olt float %83, -2.000000e+00
-  br i1 %84, label %85, label %86
-
-; <label>:85:                                     ; preds = %78
-  store i32 0, i32* @angle_dir
-  br label %86
-
-; <label>:86:                                     ; preds = %85, %78
-  br label %87
-
-; <label>:87:                                     ; preds = %86, %75
-  br label %88
-
-; <label>:88:                                     ; preds = %87, %74
+; <label>:76                                      ; preds = %75, %64
   ret void
 }
+
+declare i32 @background(...) #1
+
+declare i32 @fill(...) #1
+
+declare i32 @stroke(...) #1
+
+declare i32 @ellipse(...) #1
+
+; Function Attrs: nounwind
+declare double @sin(double) #2
+
+; Function Attrs: nounwind
+declare double @cos(double) #2
+
+attributes #0 = { nounwind uwtable "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { nounwind "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "stack-protector-buffer-size"="8" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nounwind }
+
+!llvm.ident = !{!0}
+
+!0 = metadata !{metadata !"clang version 3.4.2 (tags/RELEASE_34/dot2-final)"}

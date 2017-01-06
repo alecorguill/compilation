@@ -5,7 +5,7 @@ CC=gcc
 
 all:parse
 
-parse:grammar.c scanner.c def.o variable.o hash_table.o
+parse:grammar.c scanner.c def.o sym.o hash_table.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 def.o: def.c
@@ -14,8 +14,8 @@ def.o: def.c
 hash_table.o: variable.o hash_table.c
 	$(CC) $(CFLAGS) -c $^ -o  hash_table.o
 
-variable.o: variable.c
-	$(CC) $(CFLAGS) -c $^ -o  variable.o
+sym.o: sym.c
+	$(CC) $(CFLAGS) -c $^ -o  sym.o
 
 
 grammar.c:grammar.y

@@ -2,13 +2,13 @@
 #define HASH_TABLE_H
 
 #include <stdio.h>
-#include "variable.h"
+#include "sym.h"
 
-#define NB_VAR_MAX 1993
+#define NB_SYM_MAX 1993
 
 
 struct Hash_table {
-  struct Variable v[NB_VAR_MAX];
+  struct Sym v[NB_SYM_MAX];
 };
 
 
@@ -16,10 +16,10 @@ struct Hash_table {
 int ht_hash(const char*);
 
 //Renvoie la variable du nom correpondant
-struct Variable* ht_get(struct Hash_table*, const char*);
+struct Sym* ht_get(struct Hash_table*, const char*);
 
 //Renvoie la variable du nom correpondant
-struct Variable* ht_get_nth(struct Hash_table*, int);
+struct Sym* ht_get_nth(struct Hash_table*, int);
 
 
 //Ajoute une entree et renvoie l'indice concerne

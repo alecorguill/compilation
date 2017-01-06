@@ -1,7 +1,7 @@
-int main(){
-  int i;
+int b;
+
+int teub(){
   int j;
-  int k;
-  i = i*j+k;
-  k=i / 15;
+  int i;
+  i = j + 1;
 }
