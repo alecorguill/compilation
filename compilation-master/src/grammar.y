@@ -15,7 +15,7 @@
 #include "hash_table.h"
 
   int yyerror (char*);  
-  struct Hash_table hash_table_new;
+  struct Hash_table sym_table;
   const char* types[] = {"void", "i32", "double"};
 
   char type_assignement[4];
@@ -36,51 +36,33 @@
     char to_rm[1024];
     for(i=0; i<nb_vars; i++){
       sprintf(to_rm, "%s", block_vars[i]);
-      ht_remove(&hash_table_new, to_rm);
+      ht_remove(&sym_table, to_rm);
     }
   }
 
-
-  char *fonctions_args[3]={
-    "norm_pi_pi", "@norm_pi_pi(double", "no"};
-
-
-  void is_in_fonctions(char *s, char *dest){
+  void declare_function(char *s, char *dest){
     char *str1 = s;
     char tst[100];
-    if (ht_exists(&hash_table_new,s))
+    if (ht_exists(&sym_table,s))
       printf("exists\n");
     else
-      ht_add(&hash_table_new,s,s,V_FUNCTION);
+      ht_add(&sym_table,s,s,V_FUNCTION);
 
     printf("declare %s @%s()\n", s, tst);
   }
 
-  void is_in_fonctions_args(char *s1, char *s2, char *dest){
+  void call_args_function(char *s1, char *s2, char *dest){
     char *str1 = s1;
     char *str2 = s2;
-    int i;
-    for (i=0; i<1; i++){
-      if (strcmp(str1, fonctions_args[3*i])==0){
-    	if (strcmp(fonctions_args[3*i+2], "no")==0){
-    	  printf("%%%s = alloca double\n", s1);
-    	  fonctions_args[3*i+2] = "ok";
-    	}
-    	sprintf(buf, "%s", str2);
-    	sprintf(buf+strlen(buf), "%%r%d = call double %s %%r%d)\n", tmps, fonctions_args[3*i+1], tmps-1);
-    	sprintf(buf+strlen(buf), "store double %%r%d, double* @%s\n", tmps, str1);
-    	tmps++;
-    	return;
-      }
-    }
-    printf("call @%s(%s)\n", s1, s2);
+    if (ht_exists(&sym_table,s1))
+      printf("call @%s(%s)\n", s1, s2);
   }
 
   int print_values(struct val s1, struct val s2, char type_op[3], char *dst){
     char *str1 = s1.s;
     char *str2 = s2.s;
-    struct Variable *v1 = ht_get(&hash_table_new, str1);
-    struct Variable *v2 = ht_get(&hash_table_new, str2);
+    struct Variable *v1 = ht_get(&sym_table, str1);
+    struct Variable *v2 = ht_get(&sym_table, str2);
     int t1, t2;
     
     if(s1.type == 0){
@@ -106,11 +88,11 @@
 	sprintf(type_operation, "sdiv");
       else
 	sprintf(type_operation, "%s", type_op);
-      sprintf(dst+strlen(dst), "%%r%d = %s i32 %%r%d, %%r%d\n", tmps, type_operation, tmps-2, tmps-1);
+      sprintf(dst+strlen(dst), "r%d = %s i32 r%d, r%d\n", tmps, type_operation, tmps-2, tmps-1);
     }
 
     else{			/* double */
-      sprintf(dst+strlen(dst), "%%r%d = %s double %%r%d, %%r%d\n", tmps, type_op, tmps-2, tmps-1);
+      sprintf(dst+strlen(dst), "r%d = %s double r%d, r%d\n", tmps, type_op, tmps-2, tmps-1);
     }
 
     tmps+=1;
@@ -124,17 +106,17 @@
     struct Variable *v = NULL;
     int t;
     if(s1.type == 0){
-      v = ht_get(&hash_table_new, str1);
+      v = ht_get(&sym_table, str1);
       if (var_is_declared(v)){
       	t = var_get_type(v);
       }
 
 
-      if (var_is_special(v)){
+      if (var_is_special(v) && !var_get_llvm_name(v)){
 	sprintf(dst+strlen(dst), "r%d = load %s* @%s\n", tmps, types[t], var_get_llvm_name(v));
 	printf("%s\n",dst);
       }
-      else{
+      else if (!var_is_special(v) && !var_get_name(v)){
 	sprintf(dst+strlen(dst), "r%d = load %s* @%s\n", tmps, types[t], var_get_name(v));
 	printf("%s\n",dst);
       }
@@ -146,9 +128,9 @@
       str1 = s1.s;
       sprintf(dst, "\n%s", buf1);
       if (s1.type==1)		/* int */
-	sprintf(dst+strlen(dst), "%%var%d = add i32 0, %s\n", tmps, str1);
+	sprintf(dst+strlen(dst), "r%d = add i32 0, %s\n", tmps, str1);
       else			/* double */
-	sprintf(dst+strlen(dst), "%%var%d = add double 0.0, %s\n", tmps, str1);
+	sprintf(dst+strlen(dst), "r%d = add double 0.0, %s\n", tmps, str1);
       tmps++;
       return s1.type;
     }
@@ -171,7 +153,7 @@
     }
     
     sprintf(dest, "%s %s", str1, str2);
-    sprintf(dest+strlen(dest), "%%result%d = %ccmp %s %s %%r%d, %%r%d\n\n", results, c, c2, types[s1.type], tmps-2, tmps-1);
+    sprintf(dest+strlen(dest), "%%result%d = %ccmp %s %s r%d, r%d\n\n", results, c, c2, types[s1.type], tmps-2, tmps-1);
     ;
     results++;
     return s1.type;
@@ -183,9 +165,7 @@
   void print_struct_definition();
 %}
 
-%token <val> IDENTIFIER
-%token <val> CONSTANTF
-%token <val> CONSTANTI
+%token <val> IDENTIFIER CONSTANTF CONSTANTI
 %token <val> INC_OP DEC_OP LE_OP GE_OP EQ_OP NE_OP
 %token <val> SUB_ASSIGN MUL_ASSIGN ADD_ASSIGN
 %token <val> TYPE_NAME
@@ -193,33 +173,13 @@
 %token <val> IF ELSE WHILE RETURN FOR
 %start program
 
-%type <val> primary_expression
-%type <val> comparison_expression 
-%type <val> additive_expression
-%type <val> multiplicative_expression
-%type <val> unary_expression
-%type <val> argument_expression_list
-%type <val> postfix_expression
-%type <val> expression
+%type <val> primary_expression comparison_expression additive_expression multiplicative_expression unary_expression argument_expression_list postfix_expression expression
 
-%type <val> assignment_operator
-%type <val> declaration
-%type <val> declarator_list
-%type <val> type_name
-%type <val> declarator
-%type <val> parameter_list
-%type <val> parameter_declaration
-%type <val> statement
-%type <val> compound_statement
-%type <val> declaration_list
-%type <val> statement_list
-%type <val> expression_statement
-%type <val> selection_statement
-%type <val> iteration_statement
-%type <val> jump_statement
-%type <val> program
-%type <val> external_declaration
-%type <val> function_definition
+%type <val> assignment_operator declaration type_name declarator parameter_declaration program external_declaration function_definition
+
+%type <val> declarator_list parameter_list declaration_list statement_list
+
+%type <val> statement compound_statement expression_statement selection_statement iteration_statement jump_statement
 
 %%
 
@@ -229,8 +189,8 @@ primary_expression
 | CONSTANTI          {buf[0]='\0';}
 | CONSTANTF          {buf[0]='\0';}
 | '(' expression ')' {$$=$2;}
-| IDENTIFIER '(' ')' {is_in_fonctions($1.s, $$.s);}
-| IDENTIFIER '(' argument_expression_list ')' {is_in_fonctions_args($1.s, $3.s, $$.s);}
+| IDENTIFIER '(' ')' {declare_function($1.s, $$.s);}
+| IDENTIFIER '(' argument_expression_list ')' {call_args_function($1.s, $3.s, $$.s);}
 | IDENTIFIER INC_OP  //{yyerror("Le ++ n'est pas gere");}
 | IDENTIFIER DEC_OP  //{yyerror("Le -- n'est pas gere");}
 ;
@@ -286,7 +246,7 @@ expression
   t2 = $3.type;
   memset($$.s,0,sizeof($$.s));
 
-  struct Variable *v = ht_get(&hash_table_new, str1);
+  struct Variable *v = ht_get(&sym_table, str1);
   t1 = var_get_type(v);
   
   if (var_is_declared(v)){
@@ -308,29 +268,29 @@ expression
     }
 
     if(var_is_special(v)){
-      sprintf($$.s+strlen($$.s),"%%r%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s),"r%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
     }
     else{
-      sprintf($$.s+strlen($$.s),"%%r%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s),"r%d = load %s* @%s\n", tmps, types[t2], var_get_llvm_name(v));
     }
-    sprintf($$.s+strlen($$.s), "%%r%d = %c%s %s %%r%d, %%r%d\n", tmps+1, assign, type_assignement, a_type, tmps-1, tmps);
+    sprintf($$.s+strlen($$.s), "r%d = %c%s %s r%d, r%d\n", tmps+1, assign, type_assignement, a_type, tmps-1, tmps);
   }
 
   if (t1==1){ 			/* int */
     if (var_is_special(v)){
-      sprintf($$.s+strlen($$.s), "store i32 %%r%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s), "store i32 r%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
       var_set_modified(v, V_MODIFIED);
     }
     else
-      sprintf($$.s+strlen($$.s), "store i32 %%r%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s), "store i32 r%d, i32* @%s\n", tmps-1, var_get_llvm_name(v));
   }
   else{				/* double */
     if (var_is_special(v)){
       var_set_modified(v, V_MODIFIED);
-      sprintf($$.s+strlen($$.s), "store double %%r%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s), "store double r%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
     }
     else
-      sprintf($$.s+strlen($$.s), "store double %%r%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
+      sprintf($$.s+strlen($$.s), "store double r%d, double* @%s\n", tmps-1, var_get_llvm_name(v));
   }
 
   if(strlen(type_assignement)>0){
@@ -355,20 +315,20 @@ declarator_list
 : declarator {sprintf(block_vars[nb_vars], "%s", $1.s); nb_vars++;
   int t = (strcmp(type_name, "i32") == 0)?V_INT:V_DOUBLE;
   char *str1 = $1.s;
-  if(ht_exists(&hash_table_new, str1)){
+  if(ht_exists(&sym_table, str1)){
     yyerror("Variable deja declare\n");
   }
-  ht_add(&hash_table_new, $1.s, str1, t);
+  ht_add(&sym_table, $1.s, str1, t);
   printf("@%s = common global %s 0\n", str1, type_name);
  }
 | declarator_list ',' declarator {
   sprintf(block_vars[nb_vars], "%s", $3.s); nb_vars++;
   int t = (strcmp(type_name, "i32") == 0)?V_INT:V_DOUBLE;
   char *str2 = $3.s;
-  if(ht_exists(&hash_table_new, str2)){
+  if(ht_exists(&sym_table, str2)){
     yyerror("Variable deja declare\n");
   }
-  ht_add(&hash_table_new, str2, str2, t);
+  ht_add(&sym_table, str2, str2, t);
   printf("@%s = common global %s 0\n", str2, type_name);
   }
 ;
@@ -432,26 +392,26 @@ selection_statement
   char *str5 = $5.s;
   sprintf($$.s, "%s", str3);
   sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %d, label %d\n\n", results-1, labels, labels+1);
-  sprintf($$.s+strlen($$.s), "label%d:\n", labels);
+  sprintf($$.s+strlen($$.s), "; <label>%d:\n", labels);
   labels++;
   /* expr */
   sprintf($$.s+strlen($$.s), "%s\n", str5);
-  sprintf($$.s+strlen($$.s), "br label %d\n \nlabel%d:\n;;", labels, labels);
+  sprintf($$.s+strlen($$.s), "br label %d\n \n; <label>%d:\n", labels, labels);
   labels++;
  }
 | IF '(' expression ')' statement ELSE statement {
   sprintf($$.s, "%s", $3.s);
   sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %d, label %d\n\n", results-1, labels, labels+1);
-  sprintf($$.s+strlen($$.s), "label%d:\n", labels);
+  sprintf($$.s+strlen($$.s), "; <label>%d:\n", labels);
   labels++;
   /* expr */
   sprintf($$.s+strlen($$.s), "%s\n", $5.s);
   sprintf($$.s+strlen($$.s), "br label %d\n", labels+2);
-  sprintf($$.s+strlen($$.s), "label%d:\n", labels);
+  sprintf($$.s+strlen($$.s), "; <label>%d:\n", labels);
   labels++;
   /* expr */
   sprintf($$.s+strlen($$.s), "%s\n", $7.s);
-  sprintf($$.s+strlen($$.s), "br label %d\n \nlabel%d:\n;;", labels+1, labels+1);
+  sprintf($$.s+strlen($$.s), "br label %d\n \n; <label>%d:\n\n", labels+1, labels+1);
   labels++;
   }
 | FOR '(' expression_statement expression_statement expression ')' statement {
@@ -475,7 +435,7 @@ selection_statement
 iteration_statement
 : WHILE '(' expression ')' statement
 {
-  sprintf($$.s, "br label %d\n \nlabel%d:\n", labels, labels);
+  sprintf($$.s, "br label %d\n \n; <label>%d:\n", labels, labels);
   labels++;
   sprintf($$.s+strlen($$.s), "%s", $3.s);
   sprintf($$.s+strlen($$.s), "br i1 %%result%d, label %d, label %d\n", results-1, loops, loops+1);
@@ -542,7 +502,7 @@ int main (int argc, char *argv[]) {
 
     printf("; ModuleID = '%s'\ntarget datalayout = \"e-p:32:32-i64:64-v128:32:128-n32-S128\"\ntarget triple = \"asmjs-unknown-emscripten\"\n\n",argv[1]);
 
-    ht_init(&hash_table_new);
+    ht_init(&sym_table);
     
     yyin = input;
  
